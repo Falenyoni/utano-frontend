@@ -1,0 +1,56 @@
+const API_BASE_URL = 'http://localhost:5043'
+
+export interface LoginRequest {
+  email: string
+  password: string
+  practiceId: string
+}
+
+export interface LoginResponse {
+  userId: string
+  fullName: string
+  email: string
+  role: string
+  practiceId: string
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
+}
+
+export async function login(request: LoginRequest): Promise<LoginResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  if (!response.ok) {
+    throw new Error('Invalid email, password, or practice ID')
+  }
+
+  return response.json()
+}
+export interface RefreshRequest {
+  userId: string
+  token: string
+}
+
+export interface RefreshResponse {
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
+}
+
+export async function refresh(request: RefreshRequest): Promise<RefreshResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  if (!response.ok) {
+    throw new Error('Session expired')
+  }
+
+  return response.json()
+}
