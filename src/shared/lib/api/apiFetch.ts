@@ -1,7 +1,7 @@
 import { getStoredAuth, setStoredTokens, clearStoredAuth } from '@/shared/lib/auth/AuthContext'
 import { refresh } from '@/features/auth/authApi'
 
-const API_BASE_URL = 'http://localhost:5043'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 let refreshPromise: Promise<string> | null = null
 
