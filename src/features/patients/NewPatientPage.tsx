@@ -3,10 +3,19 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router'
 import { patientSchema, type PatientFormValues } from './patientSchema'
 import { useCreatePatient } from './useCreatePatient'
+import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
+import { COUNTRIES } from '@/shared/constants/countries'
+
+const BLOOD_GROUPS = ['APositive', 'ANegative', 'BPositive', 'BNegative', 'ABPositive', 'ABNegative', 'OPositive', 'ONegative']
+const BLOOD_GROUP_LABELS: Record<string, string> = {
+  APositive: 'A+', ANegative: 'A-', BPositive: 'B+', BNegative: 'B-',
+  ABPositive: 'AB+', ABNegative: 'AB-', OPositive: 'O+', ONegative: 'O-',
+}
 
 export function NewPatientPage() {
   const navigate = useNavigate()
   const createPatient = useCreatePatient()
+  const { data: medicalAids } = useMedicalAids()
 
   const {
     register,
@@ -14,6 +23,7 @@ export function NewPatientPage() {
     formState: { errors },
   } = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
+    defaultValues: { address: { country: 'Zimbabwe' } },
   })
 
   function onSubmit(values: PatientFormValues) {
@@ -111,7 +121,6 @@ export function NewPatientPage() {
             <div>
               <label className={labelClass}>Suburb</label>
               <input {...register('address.suburb')} className={inputClass} />
-              {errors.address?.suburb && <p className={errorClass}>{errors.address.suburb.message}</p>}
             </div>
 
             <div>
@@ -122,9 +131,65 @@ export function NewPatientPage() {
 
             <div>
               <label className={labelClass}>Country</label>
-              <input {...register('address.country')} className={inputClass} />
+              <select {...register('address.country')} className={inputClass}>
+                {COUNTRIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
               {errors.address?.country && <p className={errorClass}>{errors.address.country.message}</p>}
             </div>
+          </div>
+        </section>
+
+        <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Medical Aid (optional)</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Scheme</label>
+              <select {...register('medicalAidId')} className={inputClass}>
+                <option value="">None</option>
+                {medicalAids?.filter((a) => a.isActive).map((aid) => (
+                  <option key={aid.id} value={aid.id}>{aid.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Membership Number</label>
+              <input {...register('medicalAidNumber')} placeholder="e.g. PSM123456" className={inputClass} />
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Medical History (optional)</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Blood Group</label>
+              <select {...register('bloodGroup')} className={inputClass}>
+                <option value="">Unknown</option>
+                {BLOOD_GROUPS.map((bg) => (
+                  <option key={bg} value={bg}>{BLOOD_GROUP_LABELS[bg]}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Allergies</label>
+            <textarea
+              {...register('allergies')}
+              rows={2}
+              placeholder="e.g. Penicillin, Aspirin"
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Chronic Conditions</label>
+            <textarea
+              {...register('chronicConditions')}
+              rows={2}
+              placeholder="e.g. Hypertension, Diabetes Type 2"
+              className={inputClass}
+            />
           </div>
         </section>
 

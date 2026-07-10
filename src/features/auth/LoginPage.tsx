@@ -1,12 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate, useLocation } from 'react-router'
+import { useNavigate, useLocation, Link } from 'react-router'
 import { useAuth } from '@/shared/lib/auth/AuthContext'
 import { login as loginApi } from './authApi'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [practiceId, setPracticeId] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -20,13 +19,13 @@ export function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await loginApi({ email, password, practiceId })
+      const response = await loginApi({ email, password })
       login(response)
 
       const from = (location.state as { from?: Location })?.from?.pathname ?? '/'
       navigate(from, { replace: true })
     } catch {
-      setError('Invalid email, password, or practice ID. Please try again.')
+      setError('Invalid email or password. Please try again.')
     } finally {
       setIsSubmitting(false)
     }
@@ -68,21 +67,6 @@ export function LoginPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Practice ID
-            <span className="font-normal text-gray-400"> (temporary — GUID)</span>
-          </label>
-          <input
-            type="text"
-            value={practiceId}
-            onChange={(e) => setPracticeId(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            placeholder="885b9337-848e-46bb-9d93-84a18ba42c96"
-            required
-          />
-        </div>
-
         <button
           type="submit"
           disabled={isSubmitting}
@@ -90,6 +74,13 @@ export function LoginPage() {
         >
           {isSubmitting ? 'Signing in...' : 'Sign in'}
         </button>
+
+        <p className="text-center text-xs text-gray-400">
+          New clinic?{' '}
+          <Link to="/setup" className="text-blue-600 hover:underline">
+            Register a practice
+          </Link>
+        </p>
       </form>
     </div>
   )

@@ -6,6 +6,7 @@ export interface User {
   email: string
   role: string
   practiceId: string
+  practiceName: string
 }
 
 export interface LoginResponse extends User {

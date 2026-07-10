@@ -2,7 +2,6 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 export interface LoginRequest {
   email: string
   password: string
-  practiceId: string
 }
 
 export interface LoginResponse {
@@ -11,6 +10,7 @@ export interface LoginResponse {
   email: string
   role: string
   practiceId: string
+  practiceName: string
   accessToken: string
   refreshToken: string
   expiresAt: string
@@ -24,7 +24,7 @@ export async function login(request: LoginRequest): Promise<LoginResponse> {
   })
 
   if (!response.ok) {
-    throw new Error('Invalid email, password, or practice ID')
+    throw new Error('Invalid email or password')
   }
 
   return response.json()

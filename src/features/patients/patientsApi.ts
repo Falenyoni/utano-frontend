@@ -6,7 +6,6 @@ export interface Patient {
   fullName: string
   nationalId: string
   status: string
-  // add more fields here as your backend returns them
 }
 
 export interface PagedPatients {
@@ -26,7 +25,6 @@ export interface GetPatientsParams {
   pageSize?: number
 }
 
-
 export interface CreatePatientRequest {
   firstName: string
   lastName: string
@@ -43,11 +41,16 @@ export interface CreatePatientRequest {
   addresses: Array<{
     type: string
     street: string
-    suburb: string
+    suburb: string | null
     city: string
     country: string
     isPrimary: boolean
   }>
+  medicalAidId: string | null
+  medicalAidNumber: string | null
+  bloodGroup: string | null
+  allergies: string | null
+  chronicConditions: string | null
 }
 
 export interface Contact {
@@ -62,7 +65,7 @@ export interface Address {
   id: string
   type: string
   street: string
-  suburb: string
+  suburb: string | null
   city: string
   country: string
   isPrimary: boolean
@@ -71,11 +74,20 @@ export interface Address {
 export interface PatientDetail {
   id: string
   fullName: string
+  firstName: string
+  lastName: string
+  middleName: string | null
   nationalId: string
   dateOfBirth: string
   gender: string
   status: string
   notes: string | null
+  bloodGroup: string | null
+  allergies: string | null
+  chronicConditions: string | null
+  medicalAidId: string | null
+  medicalAidName: string | null
+  medicalAidNumber: string | null
   createdAt: string
   updatedAt: string
   contacts: Contact[]
@@ -90,14 +102,8 @@ export async function getPatients(params: GetPatientsParams): Promise<PagedPatie
   query.set('page', String(params.page ?? 1))
   query.set('pageSize', String(params.pageSize ?? 20))
 
-  const response = await apiFetch(`/api/patients?${query.toString()}`, {
-    method: 'GET',
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch patients')
-  }
-
+  const response = await apiFetch(`/api/patients?${query.toString()}`, { method: 'GET' })
+  if (!response.ok) throw new Error('Failed to fetch patients')
   return response.json()
 }
 
@@ -127,25 +133,26 @@ export function toCreatePatientRequest(values: PatientFormValues): CreatePatient
       {
         type: 'Residential',
         street: values.address.street,
-        suburb: values.address.suburb,
+        suburb: values.address.suburb || null,
         city: values.address.city,
         country: values.address.country,
         isPrimary: true,
       },
     ],
+    medicalAidId: values.medicalAidId || null,
+    medicalAidNumber: values.medicalAidNumber || null,
+    bloodGroup: values.bloodGroup || null,
+    allergies: values.allergies || null,
+    chronicConditions: values.chronicConditions || null,
   }
 }
 
-export async function createPatient(values: PatientFormValues): Promise<Patient> {
+export async function createPatient(values: PatientFormValues): Promise<{ id: string }> {
   const response = await apiFetch('/api/patients', {
     method: 'POST',
     body: JSON.stringify(toCreatePatientRequest(values)),
   })
-
-  if (!response.ok) {
-    throw new Error('Failed to create patient')
-  }
-
+  if (!response.ok) throw new Error('Failed to create patient')
   return response.json()
 }
 
@@ -155,6 +162,11 @@ export interface UpdatePatientRequest {
   lastName: string
   middleName: string | null
   notes: string | null
+  medicalAidId: string | null
+  medicalAidNumber: string | null
+  bloodGroup: string | null
+  allergies: string | null
+  chronicConditions: string | null
 }
 
 export async function updatePatient(request: UpdatePatientRequest): Promise<void> {
