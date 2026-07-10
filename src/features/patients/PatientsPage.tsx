@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { usePatients } from './usePatients'
 
 export function PatientsPage() {
@@ -9,11 +10,20 @@ export function PatientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Patients</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          {data ? `${data.totalCount} total` : 'Loading patient records...'}
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Patients</h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {data ? `${data.totalCount} total` : 'Loading patient records...'}
+          </p>
+        </div>
+
+        <Link
+          to="/patients/new"
+          className="inline-block bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700"
+        >
+          + Register Patient
+        </Link>
       </div>
 
       <input
@@ -57,6 +67,11 @@ export function PatientsPage() {
                   <td className="px-4 py-2 text-gray-900">{patient.fullName}</td>
                   <td className="px-4 py-2 text-gray-600">{patient.nationalId}</td>
                   <td className="px-4 py-2 text-gray-600">{patient.status}</td>
+                  <td className="px-4 py-2 text-gray-900">
+                      <Link to={`/patients/${patient.id}`} className="text-blue-600 hover:underline">
+                        {patient.fullName}
+                      </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

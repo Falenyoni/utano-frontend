@@ -9,11 +9,18 @@ const DashboardPage = lazy(() =>
 const PatientsPage = lazy(() =>
   import('@/features/patients/PatientsPage').then((m) => ({ default: m.PatientsPage })),
 )
+const NewPatientPage = lazy(() =>
+  import('@/features/patients/NewPatientPage').then((m) => ({ default: m.NewPatientPage })),
+)
+const PatientDetailPage = lazy(() =>
+  import('@/features/patients/PatientDetailPage').then((m) => ({ default: m.PatientDetailPage })),
+)
 const AppointmentsPage = lazy(() =>
   import('@/features/appointments/AppointmentsPage').then((m) => ({ default: m.AppointmentsPage })),
 )
 const LoginPage = lazy(() =>
   import('@/features/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
+
 )
 
 function withSuspense(element: React.ReactNode) {
@@ -34,7 +41,9 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: withSuspense(<DashboardPage />) },
           { path: 'patients', element: withSuspense(<PatientsPage />) },
+          { path: 'patients/new', element: withSuspense(<NewPatientPage />) },
           { path: 'appointments', element: withSuspense(<AppointmentsPage />) },
+          { path: 'patients/:id', element: withSuspense(<PatientDetailPage />) },
         ],
       },
     ],
