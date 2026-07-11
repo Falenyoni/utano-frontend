@@ -265,9 +265,6 @@ function DemographicsReport() {
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
             className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm" />
         </div>
-        <button onClick={() => refetch()} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
-          Run
-        </button>
       </div>
 
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}

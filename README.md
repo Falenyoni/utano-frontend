@@ -307,3 +307,68 @@ Accessible to Admin only (`settings.manage` permission). Shows all permissions i
 | Reports page | Revenue charts by doctor/period; patient visit frequency trends |
 | Print-friendly invoice | CSS print stylesheet or PDF generation for invoices |
 | Appointment reminders UI | Configure SMS/email reminder templates per practice |
+
+---
+
+## Design Decisions — Pending Implementation
+
+### Visit Creation Flow (Option B — enforced)
+
+**Decision:** Visits must always be created from the Waiting Room or Appointments page, never from the patient profile.
+
+**Rationale:** Every visit needs a clear origin — either an appointment (linked via `appointmentId`) or a deliberate walk-in decision. Creating from the patient profile bypassed the appointment link silently, producing visits with no origin context and broken appointment statistics.
+
+**Changes made:**
+- Removed `+ Open Visit` from `PatientDetailPage`. Replaced with `View all →` linking to the patient's visit history page.
+- `PatientDetailPage` now shows only the last visit (1 record, no pagination) as a quick summary.
+- Full visit history lives at `/patients/:id/visits` with doctor filter and full pagination.
+- Walk-ins: book a same-day appointment first, patient appears in Waiting Room, open visit from there.
+
+---
+
+### Billing — Discounts and Write-offs (Pending)
+
+**Current state:** Per-line-item `discountPercent` works. No invoice-level discount. No write-off.
+
+**Planned additions:**
+- **Invoice-level discount** — percentage or fixed amount off the whole bill (staff, pensioner, hardship). Requires `discountType`, `discountValue`, `discountReason` fields.
+- **Discount reason** — mandatory for audit. Shown on invoice and in reports.
+- **Write-off** — separate action to clear an uncollectable balance. Irreversible. Requires mandatory reason.
+
+**UI to build:**
+- "Apply Discount" button on Draft invoices → modal with type (Percent/Fixed), value, reason
+- "Write Off Balance" button on Issued/PartiallyPaid invoices → confirmation modal with mandatory reason field
+- Discount line shown on invoice detail and print view
+
+---
+
+### Medical Aid Shortfalls and Reconciliation (Pending)
+
+**Problem:** Medical aids rarely pay the full claimed amount. The shortfall currently sits as an unpaid balance with no owner and no workflow.
+
+**Planned workflow:**
+1. Medical aid sends Remittance Advice (RA) — one document covering many claims
+2. Staff enters RA in the system → lines matched to invoices automatically by invoice reference
+3. Bulk payment posted across all matched invoices in one action
+4. For each shortfall, staff chooses: **Bill to patient** / **Write off** / **Dispute**
+5. Disputed claims get a follow-up date and resubmission tracking
+
+**UI to build:**
+- Remittance Advice entry screen under Claims — date, medical aid, reference, line items
+- Auto-match to submitted claims, flag unmatched lines
+- Per-line shortfall action (Bill / Write Off / Dispute)
+- Recon report: submitted vs approved vs rejected by medical aid and period
+
+---
+
+### Doctor External Hospital Sessions (Pending)
+
+**Problem:** Doctors consult at external hospitals outside the practice. They need to bill those hospitals and track payment separately from patient billing.
+
+**Decision:** Session-based — doctor logs a session at a facility (not per patient). Hospitals pay per session or procedure list.
+
+**UI to build:**
+- External Facilities management page under Settings (alongside Medical Aid Schemes)
+- "Log Session" page — doctor, facility, date, type, fee, notes
+- Facility Invoice page — same layout as patient invoice but addressed to the facility
+- Facility claims section in Claims module — submission, approval, payment tracking
