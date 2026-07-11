@@ -323,86 +323,48 @@ function AddAddressModal({ patientId, onClose }: { patientId: string; onClose: (
   )
 }
 
-const VISIT_PAGE_SIZE = 10
-
-function VisitHistory({ patientId, patientName }: { patientId: string; patientName: string }) {
+function VisitHistory({ patientId }: { patientId: string }) {
   const navigate = useNavigate()
-  const [page, setPage] = useState(1)
-  const { data, isLoading } = useVisits({ patientId, page, pageSize: VISIT_PAGE_SIZE } as Parameters<typeof useVisits>[0])
+  const { data, isLoading } = useVisits({ patientId, page: 1, pageSize: 1 })
+  const last = data?.data[0]
 
   return (
     <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Visit History</h3>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Last Visit</h3>
         <button
-          onClick={() => navigate('/consultations/new', { state: { patientId, patientName } })}
+          onClick={() => navigate(`/patients/${patientId}/visits`)}
           className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
         >
-          + Open Visit
+          View all →
         </button>
       </div>
 
-      {isLoading && <p className="text-sm text-gray-400">Loading visits...</p>}
+      {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
 
-      {!isLoading && (!data || data.data.length === 0) && (
+      {!isLoading && !last && (
         <p className="text-sm text-gray-400">No visits recorded.</p>
       )}
 
-      {data && data.data.length > 0 && (
-        <>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
-                <th className="pb-1 font-medium">Date</th>
-                <th className="pb-1 font-medium">Doctor</th>
-                <th className="pb-1 font-medium">Diagnosis</th>
-                <th className="pb-1 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.data.map((v) => (
-                <tr
-                  key={v.id}
-                  onClick={() => navigate(`/consultations/${v.id}`)}
-                  className="border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                >
-                  <td className="py-2 text-gray-900 dark:text-gray-100">{v.visitDate}</td>
-                  <td className="py-2 text-gray-600 dark:text-gray-400">{v.doctorName}</td>
-                  <td className="py-2 text-gray-600 dark:text-gray-400">{v.diagnosis ?? '—'}</td>
-                  <td className="py-2">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[v.status] ?? ''}`}>
-                      {v.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {(data.hasPreviousPage || data.hasNextPage) && (
-            <div className="flex items-center justify-between pt-2 text-sm">
-              <span className="text-gray-500 dark:text-gray-400 text-xs">
-                Page {data.page} of {data.totalPages} · {data.totalCount} visits
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => p - 1)}
-                  disabled={!data.hasPreviousPage}
-                  className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <button
-                  onClick={() => setPage((p) => p + 1)}
-                  disabled={!data.hasNextPage}
-                  className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
+      {last && (
+        <div
+          onClick={() => navigate(`/consultations/${last.id}`)}
+          className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md p-2 -mx-2 transition-colors"
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">{last.visitDate}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{last.doctorName}</p>
+              {last.diagnosis && <p className="text-xs text-gray-500 dark:text-gray-400">{last.diagnosis}</p>}
             </div>
+            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[last.status] ?? ''}`}>
+              {last.status}
+            </span>
+          </div>
+          {data && data.totalCount > 1 && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">{data.totalCount - 1} earlier visit{data.totalCount > 2 ? 's' : ''}</p>
           )}
-        </>
+        </div>
       )}
     </section>
   )
@@ -739,7 +701,7 @@ export function PatientDetailPage() {
         ))}
       </section>
 
-      <VisitHistory patientId={id!} patientName={patient.fullName} />
+      <VisitHistory patientId={id!} />
 
       <button
         onClick={handleToggleStatus}

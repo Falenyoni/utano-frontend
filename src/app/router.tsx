@@ -15,6 +15,9 @@ const NewPatientPage = lazy(() =>
 const PatientDetailPage = lazy(() =>
   import('@/features/patients/PatientDetailPage').then((m) => ({ default: m.PatientDetailPage })),
 )
+const PatientVisitsPage = lazy(() =>
+  import('@/features/patients/PatientVisitsPage').then((m) => ({ default: m.PatientVisitsPage })),
+)
 const AppointmentsPage = lazy(() =>
   import('@/features/appointments/AppointmentsPage').then((m) => ({ default: m.AppointmentsPage })),
 )
@@ -103,6 +106,7 @@ export const router = createBrowserRouter([
           { path: 'patients', element: withSuspense(<PatientsPage />) },
           { path: 'patients/new', element: withSuspense(<NewPatientPage />) },
           { path: 'patients/:id', element: withSuspense(<PatientDetailPage />) },
+          { path: 'patients/:id/visits', element: withSuspense(<PatientVisitsPage />) },
           { path: 'waiting-room', element: withSuspense(<WaitingRoomPage />) },
           { path: 'appointments', element: withSuspense(<AppointmentsPage />) },
           { path: 'appointments/new', element: withSuspense(<NewAppointmentPage />) },

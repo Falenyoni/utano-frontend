@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useVisits } from './useVisits'
+import { getPatients } from '@/features/patients/patientsApi'
 
 function todayISO() {
   return new Date().toISOString().split('T')[0]
@@ -14,10 +15,46 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function ConsultationsPage() {
   const navigate = useNavigate()
-  const [date, setDate] = useState(todayISO())
-  const [page, setPage] = useState(1)
 
-  const { data, isLoading, error } = useVisits({ date, page })
+  const [date, setDate] = useState(todayISO())
+  const [patientId, setPatientId] = useState('')
+  const [patientSearch, setPatientSearch] = useState('')
+  const [patientResults, setPatientResults] = useState<{ id: string; fullName: string }[]>([])
+  const [page, setPage] = useState(1)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const { data, isLoading, error } = useVisits({
+    date: patientId ? undefined : date,
+    patientId: patientId || undefined,
+    page,
+  })
+
+  function handlePatientSearch(term: string) {
+    setPatientSearch(term)
+    setPatientId('')
+    setPage(1)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (term.length < 2) { setPatientResults([]); return }
+    debounceRef.current = setTimeout(async () => {
+      const result = await getPatients({ searchTerm: term, pageSize: 6 })
+      setPatientResults(result.data)
+    }, 300)
+  }
+
+  function selectPatient(id: string, name: string) {
+    setPatientId(id)
+    setPatientSearch(name)
+    setPatientResults([])
+    setPage(1)
+  }
+
+  function clearPatient() {
+    setPatientId('')
+    setPatientSearch('')
+    setPatientResults([])
+    setDate(todayISO())
+    setPage(1)
+  }
 
   return (
     <div className="space-y-6">
@@ -36,12 +73,52 @@ export function ConsultationsPage() {
         </button>
       </div>
 
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => { setDate(e.target.value); setPage(1) }}
-        className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-      />
+      <div className="flex flex-wrap gap-3 items-end">
+        {/* Patient search */}
+        <div className="relative">
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Patient</label>
+          {patientId ? (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950 text-sm">
+              <span className="text-gray-900 dark:text-gray-100">{patientSearch}</span>
+              <button onClick={clearPatient} className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 text-xs">✕</button>
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={patientSearch}
+              onChange={(e) => handlePatientSearch(e.target.value)}
+              placeholder="Search patient..."
+              className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm w-48"
+            />
+          )}
+          {patientResults.length > 0 && (
+            <ul className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg">
+              {patientResults.map((p) => (
+                <li
+                  key={p.id}
+                  onClick={() => selectPatient(p.id, p.fullName)}
+                  className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                >
+                  {p.fullName}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Date filter — hidden when a patient is selected */}
+        {!patientId && (
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => { setDate(e.target.value); setPage(1) }}
+              className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
+            />
+          </div>
+        )}
+      </div>
 
       {isLoading && <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>}
       {error && <div className="text-sm text-red-600 dark:text-red-400">Failed to load visits.</div>}

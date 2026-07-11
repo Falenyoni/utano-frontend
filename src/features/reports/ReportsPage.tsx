@@ -24,7 +24,7 @@ function RevenueReport() {
   const [dateFrom, setDateFrom] = useState(firstOfMonth(-2))
   const [dateTo, setDateTo] = useState(today())
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['report-revenue', dateFrom, dateTo],
     queryFn: () => getRevenueSummary({ dateFrom, dateTo }),
   })
@@ -52,19 +52,13 @@ function RevenueReport() {
             className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
           />
         </div>
-        <button
-          onClick={() => refetch()}
-          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Run
-        </button>
       </div>
 
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
 
       {data && (
         <>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
               { label: 'Total Invoiced', value: fmt(data.totalInvoiced), color: 'text-gray-900 dark:text-gray-100' },
               { label: 'Collected', value: fmt(data.totalCollected), color: 'text-green-600 dark:text-green-400' },
@@ -182,7 +176,7 @@ function VisitsByDoctorReport() {
   const [dateFrom, setDateFrom] = useState(firstOfMonth(-1))
   const [dateTo, setDateTo] = useState(today())
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['report-visits-doctor', dateFrom, dateTo],
     queryFn: () => getVisitsByDoctor({ dateFrom, dateTo }),
   })
@@ -210,12 +204,6 @@ function VisitsByDoctorReport() {
             className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
           />
         </div>
-        <button
-          onClick={() => refetch()}
-          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Run
-        </button>
       </div>
 
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
@@ -225,7 +213,7 @@ function VisitsByDoctorReport() {
         <div className="space-y-3">
           {data.map((row) => (
             <div key={row.doctorName} className="flex items-center gap-3">
-              <span className="text-sm text-gray-700 dark:text-gray-300 w-36 shrink-0 truncate">{row.doctorName}</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300 w-24 sm:w-36 shrink-0 truncate">{row.doctorName}</span>
               <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-5 overflow-hidden">
                 <div
                   className="h-full bg-blue-500 rounded-full flex items-center px-2 transition-all"
@@ -234,7 +222,7 @@ function VisitsByDoctorReport() {
                   <span className="text-white text-xs font-medium">{row.total}</span>
                 </div>
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 w-32 text-right shrink-0">
+              <div className="text-xs text-gray-500 dark:text-gray-400 w-20 sm:w-32 text-right shrink-0">
                 {row.completed} done · {row.inProgress} active
               </div>
             </div>
@@ -251,7 +239,7 @@ function DemographicsReport() {
   const [dateFrom, setDateFrom] = useState(firstOfMonth(-2))
   const [dateTo, setDateTo] = useState(today())
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['report-demographics', dateFrom, dateTo],
     queryFn: () => getVisitDemographics({ dateFrom, dateTo }),
   })
@@ -448,15 +436,15 @@ export function ReportsPage() {
   const report = REPORTS.find((r) => r.id === active)!
 
   return (
-    <div className="flex gap-6 min-h-full">
-      <nav className="w-48 shrink-0">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3 px-2">Reports</p>
-        <ul className="space-y-1">
+    <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 min-h-full">
+      <nav className="sm:w-48 sm:shrink-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3 px-2 hidden sm:block">Reports</p>
+        <ul className="flex sm:block gap-1 overflow-x-auto pb-1 sm:pb-0 sm:space-y-1">
           {REPORTS.map((r) => (
-            <li key={r.id}>
+            <li key={r.id} className="shrink-0 sm:shrink">
               <button
                 onClick={() => setActive(r.id)}
-                className={`w-full text-left block rounded-md px-3 py-2 text-sm font-medium ${
+                className={`whitespace-nowrap sm:w-full text-left block rounded-md px-3 py-2 text-sm font-medium ${
                   active === r.id
                     ? 'bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -470,7 +458,7 @@ export function ReportsPage() {
       </nav>
 
       <div className="flex-1 min-w-0">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 space-y-4">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6 space-y-4">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{report.label}</h2>
           {report.component}
         </div>
