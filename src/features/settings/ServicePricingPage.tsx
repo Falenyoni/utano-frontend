@@ -194,9 +194,9 @@ export function ServicePricingPage() {
     setSaveError(null)
     setSaving(true)
     try {
-      if (modal === 'add') {
+      if (typeof modal === 'string') {
         await createServiceItem(body)
-      } else if (modal && modal !== 'add') {
+      } else if (modal) {
         await updateServiceItem(modal.id, body)
       }
       qc.invalidateQueries({ queryKey: ['service-items'] })

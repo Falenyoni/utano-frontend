@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { useVisit, useTriageVisit, useUpdateVisit, useCompleteVisit } from './useVisits'
-import { usePrescriptions, useAddPrescription, useDispensePrescription, useRemovePrescription } from './usePrescriptions'
+import { usePrescriptions, useAddPrescription, useRemovePrescription } from './usePrescriptions'
 import { useStockItems } from '@/features/inventory/useInventory'
 import type { TriageVisitRequest, UpdateVisitRequest } from './visitsApi'
-import type { PrescriptionRow, AddPrescriptionRequest } from './prescriptionsApi'
+import type { PrescriptionRow } from './prescriptionsApi'
 import type { StockItemSummary } from '@/features/inventory/inventoryApi'
 
 const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1'
