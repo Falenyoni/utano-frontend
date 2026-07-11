@@ -69,6 +69,9 @@ const MedicalAidsPage = lazy(() =>
 const PracticePage = lazy(() =>
   import('@/features/settings/PracticePage').then((m) => ({ default: m.PracticePage })),
 )
+const ServicePricingPage = lazy(() =>
+  import('@/features/settings/ServicePricingPage').then((m) => ({ default: m.ServicePricingPage })),
+)
 const LoginPage = lazy(() =>
   import('@/features/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
 )
@@ -129,6 +132,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="staff" replace /> },
               { path: 'staff', element: withSuspense(<DoctorsPage />) },
               { path: 'medical-aids', element: withSuspense(<MedicalAidsPage />) },
+              { path: 'service-pricing', element: withSuspense(<ServicePricingPage />) },
               { path: 'practice', element: withSuspense(<PracticePage />) },
             ],
           },

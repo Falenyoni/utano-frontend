@@ -4,23 +4,24 @@ export interface PrescriptionRow {
   id: string
   description: string
   quantity: number
+  quantityDispensed: number | null
   dosageInstructions: string | null
-  dispensingType: 'BillAndDispense' | 'External'
-  status: 'Pending' | 'Dispensed'
-  stockItemId: string | null
-  stockItemName: string | null
-  unitPrice: number | null
+  status: 'Pending' | 'Dispensed' | 'PartiallyDispensed' | 'External'
+  stockItemId: string
+  stockItemName: string
   createdAt: string
 }
 
 export interface AddPrescriptionRequest {
-  description: string
+  stockItemId: string
   quantity: number
-  dispensingType: 'BillAndDispense' | 'External'
-  stockItemId?: string | null
-  stockItemName?: string | null
   dosageInstructions?: string | null
-  unitPrice?: number | null
+}
+
+export interface DispenseOutcome {
+  status: string
+  quantity: number
+  quantityDispensed: number | null
 }
 
 export async function getPrescriptions(visitId: string): Promise<PrescriptionRow[]> {
@@ -38,12 +39,13 @@ export async function addPrescription(visitId: string, body: AddPrescriptionRequ
   return res.json()
 }
 
-export async function dispensePrescription(visitId: string, prescriptionId: string): Promise<void> {
+export async function dispensePrescription(visitId: string, prescriptionId: string): Promise<DispenseOutcome> {
   const res = await apiFetch(`/api/visits/${visitId}/prescriptions/${prescriptionId}/dispense`, { method: 'PUT' })
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new Error(body?.detail ?? body?.title ?? 'Failed to dispense prescription')
   }
+  return res.json()
 }
 
 export async function removePrescription(visitId: string, prescriptionId: string): Promise<void> {

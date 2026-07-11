@@ -12,8 +12,8 @@ export function useDispensaryQueue() {
 export function useDispenserDispense() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ visitId, prescriptionId }: { visitId: string; prescriptionId: string }) =>
-      dispensePrescriptionFromQueue(visitId, prescriptionId),
+    mutationFn: ({ visitId, prescriptionId, quantityOverride }: { visitId: string; prescriptionId: string; quantityOverride?: number }) =>
+      dispensePrescriptionFromQueue(visitId, prescriptionId, quantityOverride),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['dispensary'] })
       qc.invalidateQueries({ queryKey: ['stock-items'] })

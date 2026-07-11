@@ -40,10 +40,8 @@ function ModalBackdrop({ onClose, children }: { onClose: () => void; children: R
 }
 
 function AddPrescriptionModal({ visitId, onClose }: { visitId: string; onClose: () => void }) {
-  const [dispensingType, setDispensingType] = useState<'BillAndDispense' | 'External'>('BillAndDispense')
   const [stockSearch, setStockSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState<StockItemSummary | null>(null)
-  const [description, setDescription] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [dosageInstructions, setDosageInstructions] = useState('')
   const [error, setError] = useState('')
@@ -53,30 +51,22 @@ function AddPrescriptionModal({ visitId, onClose }: { visitId: string; onClose: 
 
   function handleSelectItem(item: StockItemSummary) {
     setSelectedItem(item)
-    setDescription(item.name)
     setStockSearch('')
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (!selectedItem) { setError('Select a medication from inventory'); return }
     const qty = parseFloat(quantity)
     if (isNaN(qty) || qty <= 0) { setError('Quantity must be greater than 0'); return }
 
-    const body: AddPrescriptionRequest = {
-      description: description.trim() || (selectedItem?.name ?? ''),
-      quantity: qty,
-      dispensingType,
-      dosageInstructions: dosageInstructions.trim() || null,
-    }
-    if (dispensingType === 'BillAndDispense') {
-      if (!selectedItem) { setError('Select an inventory item for Bill & Dispense'); return }
-      body.stockItemId = selectedItem.id
-      body.stockItemName = selectedItem.name
-      body.unitPrice = selectedItem.sellingPrice
-    }
     try {
-      await addPrescription.mutateAsync(body)
+      await addPrescription.mutateAsync({
+        stockItemId: selectedItem.id,
+        quantity: qty,
+        dosageInstructions: dosageInstructions.trim() || null,
+      })
       onClose()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to add prescription')
@@ -87,62 +77,42 @@ function AddPrescriptionModal({ visitId, onClose }: { visitId: string; onClose: 
     <ModalBackdrop onClose={onClose}>
       <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Add Prescription</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className={labelClass}>Dispensing Type</label>
-          <div className="flex gap-4">
-            {(['BillAndDispense', 'External'] as const).map((t) => (
-              <label key={t} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
-                <input type="radio" name="dispensingType" value={t} checked={dispensingType === t}
-                  onChange={() => { setDispensingType(t); setSelectedItem(null); setStockSearch('') }}
-                  className="accent-blue-600" />
-                {t === 'BillAndDispense' ? 'Bill & Dispense (from stock)' : 'External (patient fills elsewhere)'}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {dispensingType === 'BillAndDispense' && (
-          <div className="space-y-2">
-            <label className={labelClass}>Search Inventory</label>
-            {selectedItem ? (
-              <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md px-3 py-2 text-sm">
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-gray-100">{selectedItem.name}</span>
-                  <span className="text-gray-500 dark:text-gray-400 ml-2">
-                    ${selectedItem.sellingPrice.toFixed(2)} · {selectedItem.quantityOnHand} {selectedItem.unit} in stock
-                  </span>
+        <div className="space-y-2">
+          <label className={labelClass}>Medication</label>
+          {selectedItem ? (
+            <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md px-3 py-2 text-sm">
+              <div>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{selectedItem.name}</span>
+                <span className="text-gray-500 dark:text-gray-400 ml-2 text-xs">
+                  {selectedItem.quantityOnHand} {selectedItem.unit} in stock
+                  {selectedItem.isLowStock && <span className="ml-1 text-amber-500">· Low stock</span>}
+                </span>
+              </div>
+              <button type="button" onClick={() => setSelectedItem(null)}
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2">Change</button>
+            </div>
+          ) : (
+            <div className="relative">
+              <input value={stockSearch} onChange={(e) => setStockSearch(e.target.value)}
+                placeholder="Search by name..." className={inputClass} autoComplete="off" autoFocus />
+              {stockSearch && stockData && stockData.data.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                  {stockData.data.map((item) => (
+                    <button key={item.id} type="button" onClick={() => handleSelectItem(item)}
+                      className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0">
+                      <span className="text-gray-900 dark:text-gray-100">{item.name}</span>
+                      <span className="text-gray-500 dark:text-gray-400 ml-2 text-xs">
+                        {item.quantityOnHand} {item.unit}
+                        {item.isLowStock && <span className="ml-1 text-amber-500">Low stock</span>}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-                <button type="button" onClick={() => setSelectedItem(null)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2">Change</button>
-              </div>
-            ) : (
-              <div className="relative">
-                <input value={stockSearch} onChange={(e) => setStockSearch(e.target.value)}
-                  placeholder="Search by name..." className={inputClass} autoComplete="off" />
-                {stockSearch && stockData && stockData.data.length > 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
-                    {stockData.data.map((item) => (
-                      <button key={item.id} type="button" onClick={() => handleSelectItem(item)}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0">
-                        <span className="text-gray-900 dark:text-gray-100">{item.name}</span>
-                        <span className="text-gray-500 dark:text-gray-400 ml-2 text-xs">
-                          ${item.sellingPrice.toFixed(2)} · {item.quantityOnHand} {item.unit}
-                          {item.isLowStock && <span className="ml-1 text-amber-500">Low stock</span>}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        <div>
-          <label className={labelClass}>{dispensingType === 'External' ? 'Drug / Item Name' : 'Description'}</label>
-          <input value={description} onChange={(e) => setDescription(e.target.value)}
-            placeholder={dispensingType === 'External' ? 'e.g. Amoxicillin 500mg' : ''}
-            className={inputClass} required />
+              )}
+            </div>
+          )}
         </div>
+
         <div>
           <label className={labelClass}>Quantity</label>
           <input type="number" step="0.5" min="0.5" value={quantity}
@@ -173,16 +143,8 @@ function AddPrescriptionModal({ visitId, onClose }: { visitId: string; onClose: 
 
 function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCompleted: boolean }) {
   const [showAdd, setShowAdd] = useState(false)
-  const [dispensingError, setDispensingError] = useState<string | null>(null)
   const { data: prescriptions, isLoading } = usePrescriptions(visitId)
-  const dispense = useDispensePrescription(visitId)
   const remove = useRemovePrescription(visitId)
-
-  async function handleDispense(p: PrescriptionRow) {
-    setDispensingError(null)
-    try { await dispense.mutateAsync(p.id) }
-    catch (err) { setDispensingError(err instanceof Error ? err.message : 'Failed to dispense') }
-  }
 
   async function handleRemove(p: PrescriptionRow) {
     if (!confirm(`Remove prescription for "${p.description}"?`)) return
@@ -202,7 +164,6 @@ function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCom
       {!isLoading && (!prescriptions || prescriptions.length === 0) && (
         <p className="text-sm text-gray-400">No prescriptions recorded.</p>
       )}
-      {dispensingError && <p className="text-sm text-red-600 dark:text-red-400">{dispensingError}</p>}
       {prescriptions && prescriptions.length > 0 && (
         <div className="space-y-2">
           {prescriptions.map((p) => (
@@ -211,22 +172,18 @@ function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCom
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{p.description}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                    p.dispensingType === 'BillAndDispense'
-                      ? 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                    p.status === 'Dispensed' ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400'
+                    : p.status === 'PartiallyDispensed' ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
+                    : p.status === 'External' ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                    : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
                   }`}>
-                    {p.dispensingType === 'BillAndDispense' ? 'Bill & Dispense' : 'External'}
-                  </span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
-                    p.status === 'Dispensed'
-                      ? 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400'
-                      : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
-                  }`}>
-                    {p.status}
+                    {p.status === 'PartiallyDispensed' ? 'Partial' : p.status}
                   </span>
                 </div>
                 <div className="text-gray-500 dark:text-gray-400 text-xs">
-                  Qty: {p.quantity}{p.unitPrice != null && ` · $${p.unitPrice.toFixed(2)} each`}
+                  Qty: {p.quantity}
+                  {p.quantityDispensed != null && p.quantityDispensed < p.quantity &&
+                    ` · ${p.quantityDispensed} dispensed, ${p.quantity - p.quantityDispensed} external`}
                 </div>
                 {p.dosageInstructions && (
                   <div className="text-gray-500 dark:text-gray-400 text-xs italic">{p.dosageInstructions}</div>
@@ -234,12 +191,6 @@ function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCom
               </div>
               {!isCompleted && p.status === 'Pending' && (
                 <div className="flex gap-2 shrink-0">
-                  {p.dispensingType === 'BillAndDispense' && (
-                    <button onClick={() => handleDispense(p)} disabled={dispense.isPending}
-                      className="text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded disabled:opacity-50">
-                      Dispense
-                    </button>
-                  )}
                   <button onClick={() => handleRemove(p)} disabled={remove.isPending}
                     className="text-xs border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 px-2 py-1 rounded disabled:opacity-50">
                     Remove

@@ -9,9 +9,10 @@ export interface DispensaryRow {
   description: string
   quantity: number
   dosageInstructions: string | null
-  dispensingType: string
-  stockItemId: string | null
-  stockItemName: string | null
+  stockItemId: string
+  stockItemName: string
+  quantityOnHand: number
+  unit: string
   createdAt: string
 }
 
@@ -21,8 +22,15 @@ export async function getDispensaryQueue(): Promise<DispensaryRow[]> {
   return res.json()
 }
 
-export async function dispensePrescriptionFromQueue(visitId: string, prescriptionId: string): Promise<void> {
-  const res = await apiFetch(`/api/visits/${visitId}/prescriptions/${prescriptionId}/dispense`, { method: 'PUT' })
+export async function dispensePrescriptionFromQueue(
+  visitId: string,
+  prescriptionId: string,
+  quantityOverride?: number,
+): Promise<void> {
+  const res = await apiFetch(`/api/visits/${visitId}/prescriptions/${prescriptionId}/dispense`, {
+    method: 'PUT',
+    body: JSON.stringify({ quantityOverride: quantityOverride ?? null }),
+  })
   if (!res.ok) {
     const body = await res.json().catch(() => null)
     throw new Error(body?.detail ?? body?.title ?? 'Failed to dispense prescription')
