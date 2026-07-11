@@ -165,20 +165,20 @@ export function NewVisitPage() {
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={openVisit.isPending}
-            className="flex-1 bg-blue-600 text-white rounded-md py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
-            {openVisit.isPending ? 'Opening...' : 'Open Visit'}
-          </button>
+        <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={openVisit.isPending}
+            className="w-full sm:w-auto bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          >
+            {openVisit.isPending ? 'Opening...' : 'Open Visit'}
           </button>
         </div>
       </form>

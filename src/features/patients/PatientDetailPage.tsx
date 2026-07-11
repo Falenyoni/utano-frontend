@@ -30,7 +30,7 @@ function ModalBackdrop({ onClose, children }: { onClose: () => void; children: R
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl p-6 space-y-4 mx-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl p-4 sm:p-6 space-y-4 mx-4">
         {children}
       </div>
     </div>

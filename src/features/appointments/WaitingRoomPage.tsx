@@ -58,15 +58,58 @@ export function WaitingRoomPage() {
         </Link>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
-        {isLoading && <div className="p-6 text-sm text-gray-500">Loading...</div>}
-        {!isLoading && allPatients.length === 0 && (
-          <div className="p-10 text-center text-sm text-gray-400">
-            <p className="text-lg mb-1">Waiting room is empty</p>
-            <p>Register a walk-in or check back when patients arrive.</p>
-          </div>
-        )}
-        {allPatients.length > 0 && (
+      {isLoading && <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>}
+      {!isLoading && allPatients.length === 0 && (
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-10 text-center text-sm text-gray-400">
+          <p className="text-lg mb-1">Waiting room is empty</p>
+          <p>Register a walk-in or check back when patients arrive.</p>
+        </div>
+      )}
+
+      {/* Mobile cards */}
+      {allPatients.length > 0 && (
+        <div className="sm:hidden space-y-2">
+          {allPatients.map((appt, idx) => (
+            <div key={appt.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-3 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs text-gray-400 font-mono shrink-0">#{idx + 1}</span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{appt.patientName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{appt.doctorName}</p>
+                  </div>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded font-medium shrink-0 ${STATUS_BADGE[appt.status] ?? ''}`}>
+                  {appt.status === 'InProgress' ? 'With Doctor' : 'Waiting'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-400 dark:text-gray-500">{waitingSince(appt.createdAt)}</span>
+                <div>
+                  {appt.status === 'Scheduled' && (
+                    <button
+                      onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
+                      className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 font-medium"
+                    >
+                      Open Visit
+                    </button>
+                  )}
+                  {appt.status === 'InProgress' && (
+                    <button onClick={() => navigate('/consultations')}
+                      className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline">
+                      View Visit
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Desktop table */}
+      {allPatients.length > 0 && (
+        <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <tr>
@@ -133,8 +176,8 @@ export function WaitingRoomPage() {
               ))}
             </tbody>
           </table>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -32,7 +32,7 @@ function ModalBackdrop({ onClose, children }: { onClose: () => void; children: R
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl p-6 space-y-4 mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl p-4 sm:p-6 space-y-4 mx-4 max-h-[90vh] overflow-y-auto">
         {children}
       </div>
     </div>
@@ -374,7 +374,7 @@ export function VisitDetailPage() {
 
         {!editingTriage ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <Field label="Blood Pressure"
                 value={visit.bloodPressureSystolic && visit.bloodPressureDiastolic
                   ? `${visit.bloodPressureSystolic}/${visit.bloodPressureDiastolic} mmHg` : null} />
@@ -388,7 +388,7 @@ export function VisitDetailPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className={labelClass}>Systolic (mmHg)</label>
                 <input type="number" value={triageForm.bloodPressureSystolic ?? ''} className={inputClass}

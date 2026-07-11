@@ -171,7 +171,7 @@ export function BillingPage() {
   )
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       {showNewInvoice && <NewInvoiceModal onClose={() => setShowNewInvoice(false)} />}
 
       <div className="flex items-center justify-between">
@@ -205,7 +205,7 @@ export function BillingPage() {
           placeholder="Search patient..."
           value={patientName}
           onChange={(e) => { setPatientName(e.target.value); setPage(1) }}
-          className={`${inputCls} w-48`}
+          className={`${inputCls} w-full sm:w-48`}
         />
         <select
           value={status}
@@ -229,7 +229,39 @@ export function BillingPage() {
         )}
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
+      {/* Mobile cards */}
+      {!isLoading && invoices.length > 0 && (
+        <div className="sm:hidden space-y-2">
+          {invoices.map((inv) => {
+            const today = new Date().toISOString().slice(0, 10)
+            const isOverdue = inv.status !== 'Paid' && inv.status !== 'Void' && inv.dueDate < today
+            return (
+              <Link key={inv.id} to={`/billing/${inv.id}`}
+                className="block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-3 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{inv.patientName}</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">{inv.invoiceNumber}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${statusColor[inv.status] ?? statusColor.Draft}`}>
+                    {inv.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>{new Date(inv.invoiceDate).toLocaleDateString()}</span>
+                  <span className={`font-medium ${inv.balanceDue > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-400'}`}>
+                    {formatCurrency(inv.balanceDue)} due
+                    {isOverdue && <span className="ml-1 text-red-500">(overdue)</span>}
+                  </span>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Desktop table */}
+      <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-left">
@@ -293,6 +325,7 @@ export function BillingPage() {
           </tbody>
         </table>
       </div>
+      {/* end desktop table */}
 
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">

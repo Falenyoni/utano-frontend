@@ -45,7 +45,7 @@ export function NewPatientPage() {
         <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Personal Details</h3>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>First Name</label>
               <input {...register('firstName')} className={inputClass} />
@@ -91,7 +91,7 @@ export function NewPatientPage() {
         <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Contact</h3>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Phone Number</label>
               <input {...register('contact.phoneNumber')} className={inputClass} />
@@ -111,7 +111,7 @@ export function NewPatientPage() {
         <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Address</h3>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Street</label>
               <input {...register('address.street')} className={inputClass} />
@@ -143,7 +143,7 @@ export function NewPatientPage() {
 
         <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Medical Aid (optional)</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Scheme</label>
               <select {...register('medicalAidId')} className={inputClass}>
@@ -162,7 +162,7 @@ export function NewPatientPage() {
 
         <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Medical History (optional)</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Blood Group</label>
               <select {...register('bloodGroup')} className={inputClass}>
@@ -199,20 +199,20 @@ export function NewPatientPage() {
           </div>
         )}
 
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={createPatient.isPending}
-            className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-          >
-            {createPatient.isPending ? 'Saving...' : 'Register Patient'}
-          </button>
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
           <button
             type="button"
             onClick={() => navigate('/patients')}
-            className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="w-full sm:w-auto border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
           >
             Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={createPatient.isPending}
+            className="w-full sm:w-auto bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          >
+            {createPatient.isPending ? 'Saving...' : 'Register Patient'}
           </button>
         </div>
       </form>

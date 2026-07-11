@@ -127,7 +127,7 @@ export default function InvoiceDetailPage() {
     .reduce((s, p) => s + p.amount, 0)
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -141,7 +141,7 @@ export default function InvoiceDetailPage() {
             {invoice.doctorName && <span className="text-sm text-gray-400 dark:text-gray-500">· {invoice.doctorName}</span>}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canEdit && (
             <button onClick={() => issueInvoice.mutate(invoice.id)}
               disabled={issueInvoice.isPending || invoice.lineItems.length === 0}
@@ -167,7 +167,7 @@ export default function InvoiceDetailPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4">
           <p className="text-xs text-gray-400 dark:text-gray-500">Total</p>
           <p className="text-xl font-bold mt-1 text-gray-900 dark:text-gray-100">{formatCurrency(invoice.totalAmount)}</p>
@@ -252,7 +252,8 @@ export default function InvoiceDetailPage() {
             </button>
           )}
         </div>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[520px] text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-left">
               <th className="px-4 py-3 font-medium">Description</th>
@@ -293,6 +294,7 @@ export default function InvoiceDetailPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Payment Plan */}
@@ -312,7 +314,8 @@ export default function InvoiceDetailPage() {
             {invoice.paymentPlan.installmentCount} installments · {invoice.paymentPlan.frequency} ·
             Paid {formatCurrency(invoice.paymentPlan.amountPaid)} of {formatCurrency(invoice.paymentPlan.totalAmount)}
           </div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[440px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-left">
                 <th className="px-4 py-3 font-medium">#</th>
@@ -353,6 +356,7 @@ export default function InvoiceDetailPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       ) : (
         canPay && invoice.balanceDue > 0 && (
@@ -375,7 +379,8 @@ export default function InvoiceDetailPage() {
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <h2 className="font-semibold text-gray-900 dark:text-gray-100">Payments</h2>
           </div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[480px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-left">
                 <th className="px-4 py-3 font-medium">Date</th>
@@ -399,13 +404,14 @@ export default function InvoiceDetailPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       {/* Add Line Item Modal */}
       {showAddLine && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 w-full max-w-md">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-md mx-4 sm:mx-0">
             <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Add Line Item</h2>
             <form onSubmit={handleAddLine} className="space-y-3">
               <div>
@@ -456,7 +462,7 @@ export default function InvoiceDetailPage() {
       {/* Record Payment Modal */}
       {showPayment && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 w-full max-w-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-sm mx-4 sm:mx-0">
             <h2 className="text-lg font-semibold mb-1 text-gray-900 dark:text-gray-100">Record Payment</h2>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Balance due: {formatCurrency(invoice.balanceDue)}</p>
             <form onSubmit={handlePayment} className="space-y-3">
@@ -510,7 +516,7 @@ export default function InvoiceDetailPage() {
       {/* Create Payment Plan Modal */}
       {showPlan && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-6 w-full max-w-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-sm mx-4 sm:mx-0">
             <h2 className="text-lg font-semibold mb-1 text-gray-900 dark:text-gray-100">Create Payment Plan</h2>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Balance: {formatCurrency(invoice.balanceDue)}</p>
             <form onSubmit={handleCreatePlan} className="space-y-3">

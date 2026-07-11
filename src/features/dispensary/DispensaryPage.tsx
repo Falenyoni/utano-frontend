@@ -60,7 +60,35 @@ export function DispensaryPage() {
       )}
 
       {data && data.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <>
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-2">
+            {data.map((row) => (
+              <div key={row.prescriptionId} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{row.patientName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{row.doctorName} · {row.visitDate}</p>
+                  </div>
+                  <button
+                    onClick={() => handleDispense(row)}
+                    disabled={dispensingId === row.prescriptionId}
+                    className="bg-green-600 hover:bg-green-700 text-white text-xs font-medium px-3 py-1.5 rounded disabled:opacity-50 shrink-0"
+                  >
+                    {dispensingId === row.prescriptionId ? 'Dispensing...' : 'Dispense'}
+                  </button>
+                </div>
+                <div className="text-sm text-gray-900 dark:text-gray-100">{row.description}</div>
+                <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                  <span>Qty: {row.quantity}</span>
+                  {row.dosageInstructions && <span className="italic">{row.dosageInstructions}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/60">
@@ -102,7 +130,8 @@ export function DispensaryPage() {
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </div>
   )
