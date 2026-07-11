@@ -21,14 +21,35 @@ const AppointmentsPage = lazy(() =>
 const NewAppointmentPage = lazy(() =>
   import('@/features/appointments/NewAppointmentPage').then((m) => ({ default: m.NewAppointmentPage })),
 )
+const WalkInPage = lazy(() =>
+  import('@/features/appointments/WalkInPage').then((m) => ({ default: m.WalkInPage })),
+)
+const WaitingRoomPage = lazy(() =>
+  import('@/features/appointments/WaitingRoomPage').then((m) => ({ default: m.WaitingRoomPage })),
+)
 const ConsultationsPage = lazy(() =>
   import('@/features/consultations/ConsultationsPage').then((m) => ({ default: m.ConsultationsPage })),
+)
+const NewVisitPage = lazy(() =>
+  import('@/features/consultations/NewVisitPage').then((m) => ({ default: m.NewVisitPage })),
+)
+const VisitDetailPage = lazy(() =>
+  import('@/features/consultations/VisitDetailPage').then((m) => ({ default: m.VisitDetailPage })),
 )
 const BillingPage = lazy(() =>
   import('@/features/billing/BillingPage').then((m) => ({ default: m.BillingPage })),
 )
+const InvoiceDetailPage = lazy(() =>
+  import('@/features/billing/InvoiceDetailPage'),
+)
 const InventoryPage = lazy(() =>
   import('@/features/inventory/InventoryPage').then((m) => ({ default: m.InventoryPage })),
+)
+const StockItemDetailPage = lazy(() =>
+  import('@/features/inventory/StockItemDetailPage'),
+)
+const ReportsPage = lazy(() =>
+  import('@/features/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })),
 )
 const ClaimsPage = lazy(() =>
   import('@/features/claims/ClaimsPage').then((m) => ({ default: m.ClaimsPage })),
@@ -41,6 +62,9 @@ const DoctorsPage = lazy(() =>
 )
 const MedicalAidsPage = lazy(() =>
   import('@/features/medicalAids/MedicalAidsPage').then((m) => ({ default: m.MedicalAidsPage })),
+)
+const PracticePage = lazy(() =>
+  import('@/features/settings/PracticePage').then((m) => ({ default: m.PracticePage })),
 )
 const LoginPage = lazy(() =>
   import('@/features/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
@@ -73,11 +97,18 @@ export const router = createBrowserRouter([
           { path: 'patients', element: withSuspense(<PatientsPage />) },
           { path: 'patients/new', element: withSuspense(<NewPatientPage />) },
           { path: 'patients/:id', element: withSuspense(<PatientDetailPage />) },
+          { path: 'waiting-room', element: withSuspense(<WaitingRoomPage />) },
           { path: 'appointments', element: withSuspense(<AppointmentsPage />) },
           { path: 'appointments/new', element: withSuspense(<NewAppointmentPage />) },
+          { path: 'appointments/walk-in', element: withSuspense(<WalkInPage />) },
           { path: 'consultations', element: withSuspense(<ConsultationsPage />) },
+          { path: 'consultations/new', element: withSuspense(<NewVisitPage />) },
+          { path: 'consultations/:id', element: withSuspense(<VisitDetailPage />) },
           { path: 'billing', element: withSuspense(<BillingPage />) },
+          { path: 'billing/:id', element: withSuspense(<InvoiceDetailPage />) },
           { path: 'inventory', element: withSuspense(<InventoryPage />) },
+          { path: 'inventory/:id', element: withSuspense(<StockItemDetailPage />) },
+          { path: 'reports', element: withSuspense(<ReportsPage />) },
           { path: 'claims', element: withSuspense(<ClaimsPage />) },
           {
             path: 'settings',
@@ -86,6 +117,7 @@ export const router = createBrowserRouter([
               { index: true, element: <Navigate to="staff" replace /> },
               { path: 'staff', element: withSuspense(<DoctorsPage />) },
               { path: 'medical-aids', element: withSuspense(<MedicalAidsPage />) },
+              { path: 'practice', element: withSuspense(<PracticePage />) },
             ],
           },
         ],

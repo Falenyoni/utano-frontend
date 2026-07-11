@@ -12,6 +12,7 @@ export interface AppointmentSummary {
   type: string
   status: string
   notes: string | null
+  createdAt: string
 }
 
 export interface AppointmentDetail extends AppointmentSummary {

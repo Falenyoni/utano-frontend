@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router'
 const settingsNav = [
   { to: '/settings/staff', label: 'Staff & Doctors' },
   { to: '/settings/medical-aids', label: 'Medical Aid Schemes' },
+  { to: '/settings/practice', label: 'Practice' },
 ]
 
 export function SettingsLayout() {

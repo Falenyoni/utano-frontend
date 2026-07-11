@@ -16,7 +16,13 @@ export interface CreateUserRequest {
   role: string
 }
 
-export const ROLES = ['Doctor', 'Receptionist', 'Billing', 'Admin'] as const
+export interface UpdateUserRequest {
+  firstName: string
+  lastName: string
+  role: string
+}
+
+export const ROLES = ['Doctor', 'Nurse', 'Receptionist', 'Billing', 'Admin'] as const
 export type Role = (typeof ROLES)[number]
 
 export async function getUsers(role?: string): Promise<StaffUser[]> {
@@ -38,7 +44,23 @@ export async function createUser(request: CreateUserRequest): Promise<StaffUser>
   return res.json()
 }
 
+export async function updateUser(id: string, request: UpdateUserRequest): Promise<void> {
+  const res = await apiFetch(`/api/users/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(request),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => null)
+    throw new Error(err?.detail ?? 'Failed to update user')
+  }
+}
+
 export async function deactivateUser(id: string): Promise<void> {
   const res = await apiFetch(`/api/users/${id}/deactivate`, { method: 'PUT' })
   if (!res.ok) throw new Error('Failed to deactivate user')
+}
+
+export async function activateUser(id: string): Promise<void> {
+  const res = await apiFetch(`/api/users/${id}/activate`, { method: 'PUT' })
+  if (!res.ok) throw new Error('Failed to activate user')
 }

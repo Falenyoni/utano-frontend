@@ -22,7 +22,10 @@ export function NewAppointmentPage() {
   const { data: doctorsData, isLoading: loadingDoctors } = useDoctors()
 
   const [patientSearch, setPatientSearch] = useState('')
-  const { data: patientsData } = usePatients({ searchTerm: patientSearch, page: 1, pageSize: 10 })
+  const { data: patientsData } = usePatients(
+    { searchTerm: patientSearch, status: 'Active', page: 1, pageSize: 10 },
+    { enabled: patientSearch.length >= 2 },
+  )
 
   const [selectedPatient, setSelectedPatient] = useState<{ id: string; name: string } | null>(null)
   const [selectedDoctor, setSelectedDoctor] = useState<{ id: string; name: string } | null>(null)

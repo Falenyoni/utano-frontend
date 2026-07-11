@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { useAppointments, useCancelAppointment, useRescheduleAppointment } from './useAppointments'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -18,6 +18,7 @@ function todayISO() {
 }
 
 export function AppointmentsPage() {
+  const navigate = useNavigate()
   const [date, setDate] = useState(todayISO())
   const [page, setPage] = useState(1)
 
@@ -68,12 +69,20 @@ export function AppointmentsPage() {
             {data ? `${data.totalCount} appointment${data.totalCount !== 1 ? 's' : ''}` : 'Loading...'}
           </p>
         </div>
-        <Link
-          to="/appointments/new"
-          className="inline-block bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700"
-        >
-          + Book Appointment
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            to="/appointments/walk-in"
+            className="inline-block border border-blue-600 text-blue-600 dark:text-blue-400 rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-950"
+          >
+            + Walk-in
+          </Link>
+          <Link
+            to="/appointments/new"
+            className="inline-block bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700"
+          >
+            + Book Appointment
+          </Link>
+        </div>
       </div>
 
       <input
@@ -118,6 +127,23 @@ export function AppointmentsPage() {
                   <td className="px-4 py-2">
                     {ACTIVE_STATUSES.includes(appt.status) && (
                       <div className="flex items-center justify-end gap-3">
+                        {appt.status !== 'InProgress' && (
+                          <button
+                            onClick={() => navigate('/consultations/new', {
+                              state: {
+                                patientId: appt.patientId,
+                                patientName: appt.patientName,
+                                doctorId: appt.doctorId,
+                                doctorName: appt.doctorName,
+                                appointmentId: appt.id,
+                                visitDate: appt.appointmentDate,
+                              }
+                            })}
+                            className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium"
+                          >
+                            Open Visit
+                          </button>
+                        )}
                         <button
                           onClick={() => openReschedule(appt.id, appt.appointmentDate, appt.startTime, appt.endTime)}
                           className="text-xs text-blue-600 dark:text-blue-400 hover:underline"

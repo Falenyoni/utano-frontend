@@ -1,8 +1,22 @@
 import { useState, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { usePatient } from './usePatient'
-import { useUpdatePatient, useDeactivatePatient, useActivatePatient } from './usePatientMutations'
+import { useUpdatePatient, useDeactivatePatient, useActivatePatient, useUpdateContact, useUpdateAddress } from './usePatientMutations'
 import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
+import { useVisits } from '@/features/consultations/useVisits'
+import type { Contact, Address } from './patientsApi'
+
+const STATUS_COLORS: Record<string, string> = {
+  InProgress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+  Completed: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+}
+
+const inputClass =
+  'w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400'
+const labelClass = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
+
+const CONTACT_TYPES = ['Mobile', 'Home', 'Work', 'Emergency']
+const ADDRESS_TYPES = ['Residential', 'Work', 'Postal', 'Other']
 
 const BLOOD_GROUPS = ['APositive', 'ANegative', 'BPositive', 'BNegative', 'ABPositive', 'ABNegative', 'OPositive', 'ONegative']
 const BLOOD_GROUP_LABELS: Record<string, string> = {
@@ -10,9 +24,249 @@ const BLOOD_GROUP_LABELS: Record<string, string> = {
   ABPositive: 'AB+', ABNegative: 'AB-', OPositive: 'O+', ONegative: 'O-',
 }
 
-const inputClass =
-  'w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm'
-const labelClass = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
+function ModalBackdrop({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl p-6 space-y-4 mx-4">
+        {children}
+      </div>
+    </div>
+  )
+}
+
+function EditContactModal({
+  patientId,
+  contact,
+  onClose,
+}: {
+  patientId: string
+  contact: Contact
+  onClose: () => void
+}) {
+  const [type, setType] = useState(contact.type)
+  const [phoneNumber, setPhoneNumber] = useState(contact.phoneNumber)
+  const [email, setEmail] = useState(contact.email ?? '')
+  const updateContact = useUpdateContact(patientId)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    updateContact.mutate(
+      { contactId: contact.id, type, phoneNumber, email: email || null },
+      { onSuccess: onClose },
+    )
+  }
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Edit Contact</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className={labelClass}>Type</label>
+          <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
+            {CONTACT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Phone Number</label>
+          <input
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className={inputClass}
+            required
+            placeholder="+263 77 123 4567"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Email (optional)</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+            placeholder="patient@example.com"
+          />
+        </div>
+        <div className="flex gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={updateContact.isPending}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            {updateContact.isPending ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </ModalBackdrop>
+  )
+}
+
+function EditAddressModal({
+  patientId,
+  address,
+  onClose,
+}: {
+  patientId: string
+  address: Address
+  onClose: () => void
+}) {
+  const [type, setType] = useState(address.type)
+  const [street, setStreet] = useState(address.street)
+  const [suburb, setSuburb] = useState(address.suburb ?? '')
+  const [city, setCity] = useState(address.city)
+  const [country, setCountry] = useState(address.country)
+  const updateAddress = useUpdateAddress(patientId)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    updateAddress.mutate(
+      { addressId: address.id, type, street, suburb: suburb || null, city, country },
+      { onSuccess: onClose },
+    )
+  }
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Edit Address</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className={labelClass}>Type</label>
+          <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
+            {ADDRESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Street</label>
+          <input value={street} onChange={(e) => setStreet(e.target.value)} className={inputClass} required />
+        </div>
+        <div>
+          <label className={labelClass}>Suburb (optional)</label>
+          <input value={suburb} onChange={(e) => setSuburb(e.target.value)} className={inputClass} />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelClass}>City</label>
+            <input value={city} onChange={(e) => setCity(e.target.value)} className={inputClass} required />
+          </div>
+          <div>
+            <label className={labelClass}>Country</label>
+            <input value={country} onChange={(e) => setCountry(e.target.value)} className={inputClass} required />
+          </div>
+        </div>
+        <div className="flex gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={updateAddress.isPending}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            {updateAddress.isPending ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </ModalBackdrop>
+  )
+}
+
+const VISIT_PAGE_SIZE = 10
+
+function VisitHistory({ patientId, patientName }: { patientId: string; patientName: string }) {
+  const navigate = useNavigate()
+  const [page, setPage] = useState(1)
+  const { data, isLoading } = useVisits({ patientId, page, pageSize: VISIT_PAGE_SIZE } as Parameters<typeof useVisits>[0])
+
+  return (
+    <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Visit History</h3>
+        <button
+          onClick={() => navigate('/consultations/new', { state: { patientId, patientName } })}
+          className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          + Open Visit
+        </button>
+      </div>
+
+      {isLoading && <p className="text-sm text-gray-400">Loading visits...</p>}
+
+      {!isLoading && (!data || data.data.length === 0) && (
+        <p className="text-sm text-gray-400">No visits recorded.</p>
+      )}
+
+      {data && data.data.length > 0 && (
+        <>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-800">
+                <th className="pb-1 font-medium">Date</th>
+                <th className="pb-1 font-medium">Doctor</th>
+                <th className="pb-1 font-medium">Diagnosis</th>
+                <th className="pb-1 font-medium">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.data.map((v) => (
+                <tr
+                  key={v.id}
+                  onClick={() => navigate(`/consultations/${v.id}`)}
+                  className="border-b border-gray-50 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                >
+                  <td className="py-2 text-gray-900 dark:text-gray-100">{v.visitDate}</td>
+                  <td className="py-2 text-gray-600 dark:text-gray-400">{v.doctorName}</td>
+                  <td className="py-2 text-gray-600 dark:text-gray-400">{v.diagnosis ?? '—'}</td>
+                  <td className="py-2">
+                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[v.status] ?? ''}`}>
+                      {v.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {(data.hasPreviousPage || data.hasNextPage) && (
+            <div className="flex items-center justify-between pt-2 text-sm">
+              <span className="text-gray-500 dark:text-gray-400 text-xs">
+                Page {data.page} of {data.totalPages} · {data.totalCount} visits
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={!data.hasPreviousPage}
+                  className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={!data.hasNextPage}
+                  className="px-3 py-1 rounded border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  )
+}
 
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -20,7 +274,7 @@ export function PatientDetailPage() {
 
   const { data: patient, isLoading, error } = usePatient(id!)
   const { data: medicalAids } = useMedicalAids()
-  const updatePatient = useUpdatePatient()
+  const updatePatient = useUpdatePatient(id)
   const deactivatePatient = useDeactivatePatient()
   const activatePatient = useActivatePatient()
 
@@ -34,6 +288,9 @@ export function PatientDetailPage() {
   const [bloodGroup, setBloodGroup] = useState('')
   const [allergies, setAllergies] = useState('')
   const [chronicConditions, setChronicConditions] = useState('')
+
+  const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null)
 
   function handleStartEdit() {
     setFirstName(patient?.firstName ?? '')
@@ -51,7 +308,6 @@ export function PatientDetailPage() {
   function handleSave(e: FormEvent) {
     e.preventDefault()
     if (!id) return
-
     updatePatient.mutate(
       {
         id,
@@ -86,6 +342,21 @@ export function PatientDetailPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      {editingContact && id && (
+        <EditContactModal
+          patientId={id}
+          contact={editingContact}
+          onClose={() => setEditingContact(null)}
+        />
+      )}
+      {editingAddress && id && (
+        <EditAddressModal
+          patientId={id}
+          address={editingAddress}
+          onClose={() => setEditingAddress(null)}
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{patient.fullName}</h2>
@@ -250,22 +521,59 @@ export function PatientDetailPage() {
       )}
 
       <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Contact</h3>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Contacts</h3>
+        {patient.contacts.length === 0 && (
+          <p className="text-sm text-gray-400">No contacts recorded.</p>
+        )}
         {patient.contacts.map((contact) => (
-          <div key={contact.id} className="text-sm text-gray-700 dark:text-gray-300">
-            {contact.phoneNumber} {contact.email && `· ${contact.email}`}
+          <div key={contact.id} className="flex items-center justify-between">
+            <div className="text-sm">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-2">{contact.type}</span>
+              <span className="text-gray-900 dark:text-gray-100">{contact.phoneNumber}</span>
+              {contact.email && (
+                <span className="text-gray-500 dark:text-gray-400"> · {contact.email}</span>
+              )}
+              {contact.isPrimary && (
+                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">Primary</span>
+              )}
+            </div>
+            <button
+              onClick={() => setEditingContact(contact)}
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-4 shrink-0"
+            >
+              Edit
+            </button>
           </div>
         ))}
       </section>
 
       <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Address</h3>
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Addresses</h3>
+        {patient.addresses.length === 0 && (
+          <p className="text-sm text-gray-400">No addresses recorded.</p>
+        )}
         {patient.addresses.map((address) => (
-          <div key={address.id} className="text-sm text-gray-700 dark:text-gray-300">
-            {address.street}{address.suburb ? `, ${address.suburb}` : ''}, {address.city}, {address.country}
+          <div key={address.id} className="flex items-center justify-between">
+            <div className="text-sm">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400 mr-2">{address.type}</span>
+              <span className="text-gray-900 dark:text-gray-100">
+                {address.street}{address.suburb ? `, ${address.suburb}` : ''}, {address.city}, {address.country}
+              </span>
+              {address.isPrimary && (
+                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">Primary</span>
+              )}
+            </div>
+            <button
+              onClick={() => setEditingAddress(address)}
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-4 shrink-0"
+            >
+              Edit
+            </button>
           </div>
         ))}
       </section>
+
+      <VisitHistory patientId={id!} patientName={patient.fullName} />
 
       <button
         onClick={handleToggleStatus}

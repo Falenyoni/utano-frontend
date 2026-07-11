@@ -3,12 +3,14 @@ import { useAuth } from '@/shared/lib/auth/AuthContext'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '🏠', end: true },
+  { to: '/waiting-room', label: 'Waiting Room', icon: '🪑' },
   { to: '/patients', label: 'Patients', icon: '👤' },
   { to: '/appointments', label: 'Appointments', icon: '📅' },
   { to: '/consultations', label: 'Consultations', icon: '📋' },
   { to: '/billing', label: 'Billing', icon: '💳' },
   { to: '/inventory', label: 'Inventory', icon: '💊' },
   { to: '/claims', label: 'Med Aid Claims', icon: '🏥' },
+  { to: '/reports', label: 'Reports', icon: '📊' },
 ]
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>

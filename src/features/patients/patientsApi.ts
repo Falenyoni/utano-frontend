@@ -156,6 +156,44 @@ export async function createPatient(values: PatientFormValues): Promise<{ id: st
   return response.json()
 }
 
+export interface QuickRegisterRequest {
+  firstName: string
+  lastName: string
+  dateOfBirth: string
+  gender: string
+  nationalId: string
+  phoneNumber: string
+}
+
+export async function quickRegisterPatient(req: QuickRegisterRequest): Promise<{ id: string; fullName: string }> {
+  const response = await apiFetch('/api/patients', {
+    method: 'POST',
+    body: JSON.stringify({
+      firstName: req.firstName,
+      lastName: req.lastName,
+      middleName: null,
+      dateOfBirth: req.dateOfBirth,
+      gender: req.gender,
+      nationalId: req.nationalId,
+      contacts: [{ type: 'Mobile', phoneNumber: req.phoneNumber, email: null, isPrimary: true }],
+      addresses: [],
+      medicalAidId: null,
+      medicalAidNumber: null,
+      bloodGroup: null,
+      allergies: null,
+      chronicConditions: null,
+    }),
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    const msg = body?.errors
+      ? Object.values(body.errors as Record<string, string[]>).flat().join(', ')
+      : 'Failed to register patient'
+    throw new Error(msg)
+  }
+  return response.json()
+}
+
 export interface UpdatePatientRequest {
   id: string
   firstName: string
@@ -185,4 +223,28 @@ export async function deactivatePatient(id: string): Promise<void> {
 export async function activatePatient(id: string): Promise<void> {
   const response = await apiFetch(`/api/patients/${id}/activate`, { method: 'PUT' })
   if (!response.ok) throw new Error('Failed to activate patient')
+}
+
+export async function updateContact(
+  patientId: string,
+  contactId: string,
+  body: { type: string; phoneNumber: string; email: string | null },
+): Promise<void> {
+  const response = await apiFetch(`/api/patients/${patientId}/contacts/${contactId}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new Error('Failed to update contact')
+}
+
+export async function updateAddress(
+  patientId: string,
+  addressId: string,
+  body: { type: string; street: string; city: string; country: string; suburb: string | null },
+): Promise<void> {
+  const response = await apiFetch(`/api/patients/${patientId}/addresses/${addressId}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new Error('Failed to update address')
 }

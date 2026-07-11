@@ -3,7 +3,7 @@ import { getPatientById } from './patientsApi'
 
 export function usePatient(id: string) {
   return useQuery({
-    queryKey: ['patients', id],
+    queryKey: ['patient', id],
     queryFn: () => getPatientById(id),
     enabled: !!id,
   })
