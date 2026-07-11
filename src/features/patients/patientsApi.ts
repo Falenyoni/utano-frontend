@@ -5,6 +5,8 @@ export interface Patient {
   id: string
   fullName: string
   nationalId: string
+  dateOfBirth: string
+  gender: string
   status: string
 }
 
@@ -225,6 +227,18 @@ export async function activatePatient(id: string): Promise<void> {
   if (!response.ok) throw new Error('Failed to activate patient')
 }
 
+export async function addContact(
+  patientId: string,
+  body: { type: string; phoneNumber: string; email: string | null; isPrimary: boolean },
+): Promise<{ id: string }> {
+  const response = await apiFetch(`/api/patients/${patientId}/contacts`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new Error('Failed to add contact')
+  return response.json()
+}
+
 export async function updateContact(
   patientId: string,
   contactId: string,
@@ -235,6 +249,18 @@ export async function updateContact(
     body: JSON.stringify(body),
   })
   if (!response.ok) throw new Error('Failed to update contact')
+}
+
+export async function addAddress(
+  patientId: string,
+  body: { type: string; street: string; city: string; country: string; suburb: string | null; isPrimary: boolean },
+): Promise<{ id: string }> {
+  const response = await apiFetch(`/api/patients/${patientId}/addresses`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new Error('Failed to add address')
+  return response.json()
 }
 
 export async function updateAddress(

@@ -69,6 +69,12 @@ const PracticePage = lazy(() =>
 const LoginPage = lazy(() =>
   import('@/features/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
 )
+const DispensaryPage = lazy(() =>
+  import('@/features/dispensary/DispensaryPage').then((m) => ({ default: m.DispensaryPage })),
+)
+const AuditLogPage = lazy(() =>
+  import('@/features/audit/AuditLogPage').then((m) => ({ default: m.AuditLogPage })),
+)
 const SetupPage = lazy(() =>
   import('@/features/setup/SetupPage').then((m) => ({ default: m.SetupPage })),
 )
@@ -108,8 +114,10 @@ export const router = createBrowserRouter([
           { path: 'billing/:id', element: withSuspense(<InvoiceDetailPage />) },
           { path: 'inventory', element: withSuspense(<InventoryPage />) },
           { path: 'inventory/:id', element: withSuspense(<StockItemDetailPage />) },
+          { path: 'dispensary', element: withSuspense(<DispensaryPage />) },
           { path: 'reports', element: withSuspense(<ReportsPage />) },
           { path: 'claims', element: withSuspense(<ClaimsPage />) },
+          { path: 'admin/audit-log', element: withSuspense(<AuditLogPage />) },
           {
             path: 'settings',
             element: withSuspense(<SettingsLayout />),

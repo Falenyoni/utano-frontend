@@ -31,7 +31,9 @@ export function NewVisitPage() {
   const [patientSearch, setPatientSearch] = useState(prefill.patientName ?? '')
   const [patientId, setPatientId] = useState(prefill.patientId ?? '')
   const [patientName, setPatientName] = useState(prefill.patientName ?? '')
-  const [searchResults, setSearchResults] = useState<{ id: string; fullName: string }[]>([])
+  const [patientGender, setPatientGender] = useState<string | null>(null)
+  const [patientDateOfBirth, setPatientDateOfBirth] = useState<string | null>(null)
+  const [searchResults, setSearchResults] = useState<{ id: string; fullName: string; gender: string; dateOfBirth: string }[]>([])
   const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -50,9 +52,11 @@ export function NewVisitPage() {
     }, 300)
   }
 
-  function selectPatient(id: string, name: string) {
+  function selectPatient(id: string, name: string, gender: string, dob: string) {
     setPatientId(id)
     setPatientName(name)
+    setPatientGender(gender)
+    setPatientDateOfBirth(dob)
     setPatientSearch(name)
     setSearchResults([])
   }
@@ -74,6 +78,8 @@ export function NewVisitPage() {
         visitDate,
         department: department.trim() || null,
         appointmentId: prefill.appointmentId,
+        patientGender: patientGender ?? undefined,
+        patientDateOfBirth: patientDateOfBirth ?? undefined,
       })
       navigate(`/consultations/${result.id}`)
     } catch {
@@ -114,7 +120,7 @@ export function NewVisitPage() {
               {searchResults.map((p) => (
                 <li
                   key={p.id}
-                  onClick={() => selectPatient(p.id, p.fullName)}
+                  onClick={() => selectPatient(p.id, p.fullName, p.gender, p.dateOfBirth)}
                   className="px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
                 >
                   {p.fullName}

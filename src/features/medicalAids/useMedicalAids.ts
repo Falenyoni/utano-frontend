@@ -4,6 +4,7 @@ import {
   addMedicalAid,
   activateMedicalAid,
   deactivateMedicalAid,
+  updateMedicalAid,
 } from './medicalAidsApi'
 
 export function useMedicalAids() {
@@ -26,6 +27,15 @@ export function useToggleMedicalAid() {
   return useMutation({
     mutationFn: ({ id, activate }: { id: string; activate: boolean }) =>
       activate ? activateMedicalAid(id) : deactivateMedicalAid(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['medical-aids'] }),
+  })
+}
+
+export function useUpdateMedicalAid() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, name, code }: { id: string; name: string; code: string }) =>
+      updateMedicalAid(id, name, code),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['medical-aids'] }),
   })
 }

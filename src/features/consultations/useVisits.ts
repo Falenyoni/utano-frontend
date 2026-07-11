@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getVisits, getVisitById, openVisit, updateVisit, completeVisit, type OpenVisitRequest, type UpdateVisitRequest } from './visitsApi'
+import { getVisits, getVisitById, openVisit, updateVisit, triageVisit, completeVisit, type OpenVisitRequest, type UpdateVisitRequest, type TriageVisitRequest } from './visitsApi'
 
 export function useVisits(params: { patientId?: string; doctorId?: string; date?: string; page?: number; pageSize?: number }) {
   return useQuery({ queryKey: ['visits', params], queryFn: () => getVisits(params) })
@@ -21,6 +21,14 @@ export function useUpdateVisit() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, ...req }: { id: string } & UpdateVisitRequest) => updateVisit(id, req),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
+  })
+}
+
+export function useTriageVisit() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...req }: { id: string } & TriageVisitRequest) => triageVisit(id, req),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['visits'] }),
   })
 }

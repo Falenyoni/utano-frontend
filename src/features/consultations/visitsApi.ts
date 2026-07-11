@@ -56,10 +56,11 @@ export interface OpenVisitRequest {
   visitDate: string
   department?: string | null
   appointmentId?: string
+  patientGender?: string
+  patientDateOfBirth?: string
 }
 
-export interface UpdateVisitRequest {
-  department: string | null
+export interface TriageVisitRequest {
   bloodPressureSystolic: number | null
   bloodPressureDiastolic: number | null
   weightKg: number | null
@@ -68,11 +69,16 @@ export interface UpdateVisitRequest {
   pulseRate: number | null
   oxygenSaturation: number | null
   chiefComplaint: string | null
+}
+
+export interface UpdateVisitRequest {
+  chiefComplaint: string | null
   symptoms: string | null
   diagnosis: string | null
   treatment: string | null
   prescription: string | null
   notes: string | null
+  department: string | null
 }
 
 export async function getVisits(params: { patientId?: string; doctorId?: string; date?: string; page?: number; pageSize?: number }): Promise<PagedVisits> {
@@ -102,6 +108,11 @@ export async function openVisit(request: OpenVisitRequest): Promise<{ id: string
 export async function updateVisit(id: string, request: UpdateVisitRequest): Promise<void> {
   const res = await apiFetch(`/api/visits/${id}`, { method: 'PUT', body: JSON.stringify(request) })
   if (!res.ok) throw new Error('Failed to update visit')
+}
+
+export async function triageVisit(id: string, request: TriageVisitRequest): Promise<void> {
+  const res = await apiFetch(`/api/visits/${id}/triage`, { method: 'PUT', body: JSON.stringify(request) })
+  if (!res.ok) throw new Error('Failed to save triage')
 }
 
 export async function completeVisit(id: string): Promise<void> {

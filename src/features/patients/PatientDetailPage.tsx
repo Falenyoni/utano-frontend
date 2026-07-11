@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { usePatient } from './usePatient'
-import { useUpdatePatient, useDeactivatePatient, useActivatePatient, useUpdateContact, useUpdateAddress } from './usePatientMutations'
+import { useUpdatePatient, useDeactivatePatient, useActivatePatient, useAddContact, useUpdateContact, useAddAddress, useUpdateAddress } from './usePatientMutations'
 import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
 import { useVisits } from '@/features/consultations/useVisits'
 import type { Contact, Address } from './patientsApi'
@@ -183,6 +183,146 @@ function EditAddressModal({
   )
 }
 
+function AddContactModal({ patientId, onClose }: { patientId: string; onClose: () => void }) {
+  const [type, setType] = useState('Mobile')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [email, setEmail] = useState('')
+  const [isPrimary, setIsPrimary] = useState(true)
+  const addContact = useAddContact(patientId)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    addContact.mutate(
+      { type, phoneNumber, email: email || null, isPrimary },
+      { onSuccess: onClose },
+    )
+  }
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Add Contact</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className={labelClass}>Type</label>
+          <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
+            {CONTACT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Phone Number</label>
+          <input
+            value={phoneNumber}
+            onChange={(e) => setPhoneNumber(e.target.value)}
+            className={inputClass}
+            required
+            placeholder="+263 77 123 4567"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Email (optional)</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={inputClass}
+            placeholder="patient@example.com"
+          />
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} className="rounded" />
+          Set as primary contact
+        </label>
+        <div className="flex gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={addContact.isPending}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            {addContact.isPending ? 'Adding...' : 'Add Contact'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </ModalBackdrop>
+  )
+}
+
+function AddAddressModal({ patientId, onClose }: { patientId: string; onClose: () => void }) {
+  const [type, setType] = useState('Residential')
+  const [street, setStreet] = useState('')
+  const [suburb, setSuburb] = useState('')
+  const [city, setCity] = useState('')
+  const [country, setCountry] = useState('Zimbabwe')
+  const [isPrimary, setIsPrimary] = useState(true)
+  const addAddress = useAddAddress(patientId)
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    addAddress.mutate(
+      { type, street, suburb: suburb || null, city, country, isPrimary },
+      { onSuccess: onClose },
+    )
+  }
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Add Address</h3>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className={labelClass}>Type</label>
+          <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
+            {ADDRESS_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>Street</label>
+          <input value={street} onChange={(e) => setStreet(e.target.value)} className={inputClass} required placeholder="123 Main Street" />
+        </div>
+        <div>
+          <label className={labelClass}>Suburb (optional)</label>
+          <input value={suburb} onChange={(e) => setSuburb(e.target.value)} className={inputClass} placeholder="Avondale" />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={labelClass}>City</label>
+            <input value={city} onChange={(e) => setCity(e.target.value)} className={inputClass} required placeholder="Harare" />
+          </div>
+          <div>
+            <label className={labelClass}>Country</label>
+            <input value={country} onChange={(e) => setCountry(e.target.value)} className={inputClass} required />
+          </div>
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input type="checkbox" checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} className="rounded" />
+          Set as primary address
+        </label>
+        <div className="flex gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={addAddress.isPending}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
+          >
+            {addAddress.isPending ? 'Adding...' : 'Add Address'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </ModalBackdrop>
+  )
+}
+
 const VISIT_PAGE_SIZE = 10
 
 function VisitHistory({ patientId, patientName }: { patientId: string; patientName: string }) {
@@ -291,6 +431,8 @@ export function PatientDetailPage() {
 
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [editingAddress, setEditingAddress] = useState<Address | null>(null)
+  const [showAddContact, setShowAddContact] = useState(false)
+  const [showAddAddress, setShowAddAddress] = useState(false)
 
   function handleStartEdit() {
     setFirstName(patient?.firstName ?? '')
@@ -342,12 +484,18 @@ export function PatientDetailPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      {showAddContact && id && (
+        <AddContactModal patientId={id} onClose={() => setShowAddContact(false)} />
+      )}
       {editingContact && id && (
         <EditContactModal
           patientId={id}
           contact={editingContact}
           onClose={() => setEditingContact(null)}
         />
+      )}
+      {showAddAddress && id && (
+        <AddAddressModal patientId={id} onClose={() => setShowAddAddress(false)} />
       )}
       {editingAddress && id && (
         <EditAddressModal
@@ -492,36 +640,46 @@ export function PatientDetailPage() {
         )}
       </section>
 
-      {!isEditing && (patient.bloodGroup || patient.allergies || patient.chronicConditions) && (
+      {!isEditing && (
         <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Medical History</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Medical History</h3>
+            <button
+              onClick={handleStartEdit}
+              className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Edit
+            </button>
+          </div>
           <dl className="grid grid-cols-2 gap-4 text-sm">
-            {patient.bloodGroup && (
-              <div>
-                <dt className="text-gray-500 dark:text-gray-400">Blood Group</dt>
-                <dd className="text-gray-900 dark:text-gray-100">
-                  {BLOOD_GROUP_LABELS[patient.bloodGroup] ?? patient.bloodGroup}
-                </dd>
-              </div>
-            )}
-            {patient.allergies && (
-              <div className="col-span-2">
-                <dt className="text-gray-500 dark:text-gray-400">Allergies</dt>
-                <dd className="text-gray-900 dark:text-gray-100">{patient.allergies}</dd>
-              </div>
-            )}
-            {patient.chronicConditions && (
-              <div className="col-span-2">
-                <dt className="text-gray-500 dark:text-gray-400">Chronic Conditions</dt>
-                <dd className="text-gray-900 dark:text-gray-100">{patient.chronicConditions}</dd>
-              </div>
-            )}
+            <div>
+              <dt className="text-gray-500 dark:text-gray-400">Blood Group</dt>
+              <dd className="text-gray-900 dark:text-gray-100">
+                {patient.bloodGroup ? (BLOOD_GROUP_LABELS[patient.bloodGroup] ?? patient.bloodGroup) : '—'}
+              </dd>
+            </div>
+            <div className="col-span-2">
+              <dt className="text-gray-500 dark:text-gray-400">Allergies</dt>
+              <dd className="text-gray-900 dark:text-gray-100">{patient.allergies || '—'}</dd>
+            </div>
+            <div className="col-span-2">
+              <dt className="text-gray-500 dark:text-gray-400">Chronic Conditions</dt>
+              <dd className="text-gray-900 dark:text-gray-100">{patient.chronicConditions || '—'}</dd>
+            </div>
           </dl>
         </section>
       )}
 
       <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Contacts</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Contacts</h3>
+          <button
+            onClick={() => setShowAddContact(true)}
+            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            + Add Contact
+          </button>
+        </div>
         {patient.contacts.length === 0 && (
           <p className="text-sm text-gray-400">No contacts recorded.</p>
         )}
@@ -548,7 +706,15 @@ export function PatientDetailPage() {
       </section>
 
       <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Addresses</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Addresses</h3>
+          <button
+            onClick={() => setShowAddAddress(true)}
+            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            + Add Address
+          </button>
+        </div>
         {patient.addresses.length === 0 && (
           <p className="text-sm text-gray-400">No addresses recorded.</p>
         )}

@@ -1,15 +1,21 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
-import { useVisit, useUpdateVisit, useCompleteVisit } from './useVisits'
+import { useVisit, useTriageVisit, useUpdateVisit, useCompleteVisit } from './useVisits'
 import { usePrescriptions, useAddPrescription, useDispensePrescription, useRemovePrescription } from './usePrescriptions'
 import { useStockItems } from '@/features/inventory/useInventory'
-import type { UpdateVisitRequest } from './visitsApi'
+import type { TriageVisitRequest, UpdateVisitRequest } from './visitsApi'
 import type { PrescriptionRow, AddPrescriptionRequest } from './prescriptionsApi'
 import type { StockItemSummary } from '@/features/inventory/inventoryApi'
 
 const labelClass = 'block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1'
 const inputClass = 'w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400'
 const textareaClass = `${inputClass} resize-none`
+
+const statusColors: Record<string, string> = {
+  InProgress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+  Triaged: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  Completed: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+}
 
 function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
@@ -33,13 +39,7 @@ function ModalBackdrop({ onClose, children }: { onClose: () => void; children: R
   )
 }
 
-function AddPrescriptionModal({
-  visitId,
-  onClose,
-}: {
-  visitId: string
-  onClose: () => void
-}) {
+function AddPrescriptionModal({ visitId, onClose }: { visitId: string; onClose: () => void }) {
   const [dispensingType, setDispensingType] = useState<'BillAndDispense' | 'External'>('BillAndDispense')
   const [stockSearch, setStockSearch] = useState('')
   const [selectedItem, setSelectedItem] = useState<StockItemSummary | null>(null)
@@ -60,7 +60,6 @@ function AddPrescriptionModal({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-
     const qty = parseFloat(quantity)
     if (isNaN(qty) || qty <= 0) { setError('Quantity must be greater than 0'); return }
 
@@ -70,14 +69,12 @@ function AddPrescriptionModal({
       dispensingType,
       dosageInstructions: dosageInstructions.trim() || null,
     }
-
     if (dispensingType === 'BillAndDispense') {
       if (!selectedItem) { setError('Select an inventory item for Bill & Dispense'); return }
       body.stockItemId = selectedItem.id
       body.stockItemName = selectedItem.name
       body.unitPrice = selectedItem.sellingPrice
     }
-
     try {
       await addPrescription.mutateAsync(body)
       onClose()
@@ -89,22 +86,16 @@ function AddPrescriptionModal({
   return (
     <ModalBackdrop onClose={onClose}>
       <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Add Prescription</h3>
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className={labelClass}>Dispensing Type</label>
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             {(['BillAndDispense', 'External'] as const).map((t) => (
               <label key={t} className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 dark:text-gray-300">
-                <input
-                  type="radio"
-                  name="dispensingType"
-                  value={t}
-                  checked={dispensingType === t}
+                <input type="radio" name="dispensingType" value={t} checked={dispensingType === t}
                   onChange={() => { setDispensingType(t); setSelectedItem(null); setStockSearch('') }}
-                  className="accent-blue-600"
-                />
-                {t === 'BillAndDispense' ? 'Bill & Dispense (from stock)' : 'External (patient fills)'}
+                  className="accent-blue-600" />
+                {t === 'BillAndDispense' ? 'Bill & Dispense (from stock)' : 'External (patient fills elsewhere)'}
               </label>
             ))}
           </div>
@@ -116,37 +107,22 @@ function AddPrescriptionModal({
             {selectedItem ? (
               <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md px-3 py-2 text-sm">
                 <div>
-                  <span className="text-gray-900 dark:text-gray-100 font-medium">{selectedItem.name}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{selectedItem.name}</span>
                   <span className="text-gray-500 dark:text-gray-400 ml-2">
                     ${selectedItem.sellingPrice.toFixed(2)} · {selectedItem.quantityOnHand} {selectedItem.unit} in stock
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedItem(null)}
-                  className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2"
-                >
-                  Change
-                </button>
+                <button type="button" onClick={() => setSelectedItem(null)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline ml-2">Change</button>
               </div>
             ) : (
               <div className="relative">
-                <input
-                  value={stockSearch}
-                  onChange={(e) => setStockSearch(e.target.value)}
-                  placeholder="Search by name..."
-                  className={inputClass}
-                  autoComplete="off"
-                />
+                <input value={stockSearch} onChange={(e) => setStockSearch(e.target.value)}
+                  placeholder="Search by name..." className={inputClass} autoComplete="off" />
                 {stockSearch && stockData && stockData.data.length > 0 && (
                   <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
                     {stockData.data.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => handleSelectItem(item)}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0"
-                      >
+                      <button key={item.id} type="button" onClick={() => handleSelectItem(item)}
+                        className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm border-b border-gray-100 dark:border-gray-700 last:border-0">
                         <span className="text-gray-900 dark:text-gray-100">{item.name}</span>
                         <span className="text-gray-500 dark:text-gray-400 ml-2 text-xs">
                           ${item.sellingPrice.toFixed(2)} · {item.quantityOnHand} {item.unit}
@@ -156,68 +132,37 @@ function AddPrescriptionModal({
                     ))}
                   </div>
                 )}
-                {stockSearch && stockData && stockData.data.length === 0 && (
-                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md p-3 text-sm text-gray-500 dark:text-gray-400 shadow-lg">
-                    No items found
-                  </div>
-                )}
               </div>
             )}
           </div>
         )}
 
         <div>
-          <label className={labelClass}>
-            {dispensingType === 'External' ? 'Drug / Item Name' : 'Description'}
-          </label>
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+          <label className={labelClass}>{dispensingType === 'External' ? 'Drug / Item Name' : 'Description'}</label>
+          <input value={description} onChange={(e) => setDescription(e.target.value)}
             placeholder={dispensingType === 'External' ? 'e.g. Amoxicillin 500mg' : ''}
-            className={inputClass}
-            required
-          />
+            className={inputClass} required />
         </div>
-
         <div>
           <label className={labelClass}>Quantity</label>
-          <input
-            type="number"
-            step="0.5"
-            min="0.5"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className={inputClass}
-            required
-          />
+          <input type="number" step="0.5" min="0.5" value={quantity}
+            onChange={(e) => setQuantity(e.target.value)} className={inputClass} required />
         </div>
-
         <div>
           <label className={labelClass}>Dosage Instructions (optional)</label>
-          <textarea
-            value={dosageInstructions}
-            onChange={(e) => setDosageInstructions(e.target.value)}
-            rows={2}
-            placeholder="e.g. Take 1 tablet twice daily after meals for 7 days"
-            className={textareaClass}
-          />
+          <textarea value={dosageInstructions} onChange={(e) => setDosageInstructions(e.target.value)}
+            rows={2} placeholder="e.g. Take 1 tablet twice daily after meals for 7 days" className={textareaClass} />
         </div>
 
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <div className="flex gap-3 pt-1">
-          <button
-            type="submit"
-            disabled={addPrescription.isPending}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50"
-          >
+          <button type="submit" disabled={addPrescription.isPending}
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-50">
             {addPrescription.isPending ? 'Adding...' : 'Add Prescription'}
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
+          <button type="button" onClick={onClose}
+            className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
             Cancel
           </button>
         </div>
@@ -229,18 +174,14 @@ function AddPrescriptionModal({
 function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCompleted: boolean }) {
   const [showAdd, setShowAdd] = useState(false)
   const [dispensingError, setDispensingError] = useState<string | null>(null)
-
   const { data: prescriptions, isLoading } = usePrescriptions(visitId)
   const dispense = useDispensePrescription(visitId)
   const remove = useRemovePrescription(visitId)
 
   async function handleDispense(p: PrescriptionRow) {
     setDispensingError(null)
-    try {
-      await dispense.mutateAsync(p.id)
-    } catch (err) {
-      setDispensingError(err instanceof Error ? err.message : 'Failed to dispense')
-    }
+    try { await dispense.mutateAsync(p.id) }
+    catch (err) { setDispensingError(err instanceof Error ? err.message : 'Failed to dispense') }
   }
 
   async function handleRemove(p: PrescriptionRow) {
@@ -251,38 +192,23 @@ function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCom
   return (
     <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
       {showAdd && <AddPrescriptionModal visitId={visitId} onClose={() => setShowAdd(false)} />}
-
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Prescriptions</h3>
         {!isCompleted && (
-          <button
-            onClick={() => setShowAdd(true)}
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            + Add
-          </button>
+          <button onClick={() => setShowAdd(true)} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">+ Add</button>
         )}
       </div>
-
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
-
       {!isLoading && (!prescriptions || prescriptions.length === 0) && (
         <p className="text-sm text-gray-400">No prescriptions recorded.</p>
       )}
-
-      {dispensingError && (
-        <p className="text-sm text-red-600 dark:text-red-400">{dispensingError}</p>
-      )}
-
+      {dispensingError && <p className="text-sm text-red-600 dark:text-red-400">{dispensingError}</p>}
       {prescriptions && prescriptions.length > 0 && (
         <div className="space-y-2">
           {prescriptions.map((p) => (
-            <div
-              key={p.id}
-              className="flex items-start justify-between gap-3 p-3 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
-            >
+            <div key={p.id} className="flex items-start justify-between gap-3 p-3 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
               <div className="flex-1 min-w-0 text-sm space-y-0.5">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{p.description}</span>
                   <span className={`text-xs px-1.5 py-0.5 rounded font-medium shrink-0 ${
                     p.dispensingType === 'BillAndDispense'
@@ -300,30 +226,22 @@ function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCom
                   </span>
                 </div>
                 <div className="text-gray-500 dark:text-gray-400 text-xs">
-                  Qty: {p.quantity}
-                  {p.unitPrice != null && ` · $${p.unitPrice.toFixed(2)} each`}
+                  Qty: {p.quantity}{p.unitPrice != null && ` · $${p.unitPrice.toFixed(2)} each`}
                 </div>
                 {p.dosageInstructions && (
                   <div className="text-gray-500 dark:text-gray-400 text-xs italic">{p.dosageInstructions}</div>
                 )}
               </div>
-
               {!isCompleted && p.status === 'Pending' && (
                 <div className="flex gap-2 shrink-0">
                   {p.dispensingType === 'BillAndDispense' && (
-                    <button
-                      onClick={() => handleDispense(p)}
-                      disabled={dispense.isPending}
-                      className="text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded disabled:opacity-50"
-                    >
+                    <button onClick={() => handleDispense(p)} disabled={dispense.isPending}
+                      className="text-xs bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded disabled:opacity-50">
                       Dispense
                     </button>
                   )}
-                  <button
-                    onClick={() => handleRemove(p)}
-                    disabled={remove.isPending}
-                    className="text-xs border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 px-2 py-1 rounded disabled:opacity-50"
-                  >
+                  <button onClick={() => handleRemove(p)} disabled={remove.isPending}
+                    className="text-xs border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 px-2 py-1 rounded disabled:opacity-50">
                     Remove
                   </button>
                 </div>
@@ -340,23 +258,27 @@ export function VisitDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: visit, isLoading, error } = useVisit(id!)
+  const triageVisit = useTriageVisit()
   const updateVisit = useUpdateVisit()
   const completeVisit = useCompleteVisit()
 
-  const [editing, setEditing] = useState(false)
-  const [form, setForm] = useState<UpdateVisitRequest>({
-    department: null,
+  const [editingTriage, setEditingTriage] = useState(false)
+  const [triageForm, setTriageForm] = useState<TriageVisitRequest>({
     bloodPressureSystolic: null, bloodPressureDiastolic: null,
     weightKg: null, heightCm: null,
     temperatureCelsius: null, pulseRate: null, oxygenSaturation: null,
-    chiefComplaint: null, symptoms: null, diagnosis: null,
-    treatment: null, prescription: null, notes: null,
+    chiefComplaint: null,
   })
 
-  function startEdit() {
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesForm, setNotesForm] = useState<UpdateVisitRequest>({
+    chiefComplaint: null, symptoms: null, diagnosis: null,
+    treatment: null, prescription: null, notes: null, department: null,
+  })
+
+  function startEditTriage() {
     if (!visit) return
-    setForm({
-      department: visit.department,
+    setTriageForm({
       bloodPressureSystolic: visit.bloodPressureSystolic,
       bloodPressureDiastolic: visit.bloodPressureDiastolic,
       weightKg: visit.weightKg,
@@ -365,17 +287,22 @@ export function VisitDetailPage() {
       pulseRate: visit.pulseRate,
       oxygenSaturation: visit.oxygenSaturation,
       chiefComplaint: visit.chiefComplaint,
+    })
+    setEditingTriage(true)
+  }
+
+  function startEditNotes() {
+    if (!visit) return
+    setNotesForm({
+      chiefComplaint: visit.chiefComplaint,
       symptoms: visit.symptoms,
       diagnosis: visit.diagnosis,
       treatment: visit.treatment,
       prescription: visit.prescription,
       notes: visit.notes,
+      department: visit.department,
     })
-    setEditing(true)
-  }
-
-  function set<K extends keyof UpdateVisitRequest>(key: K, value: UpdateVisitRequest[K]) {
-    setForm((f) => ({ ...f, [key]: value }))
+    setEditingNotes(true)
   }
 
   function numOrNull(val: string) {
@@ -383,10 +310,16 @@ export function VisitDetailPage() {
     return isNaN(n) ? null : n
   }
 
-  async function handleSave() {
+  async function handleSaveTriage() {
     if (!id) return
-    await updateVisit.mutateAsync({ id, ...form })
-    setEditing(false)
+    await triageVisit.mutateAsync({ id, ...triageForm })
+    setEditingTriage(false)
+  }
+
+  async function handleSaveNotes() {
+    if (!id) return
+    await updateVisit.mutateAsync({ id, ...notesForm })
+    setEditingNotes(false)
   }
 
   async function handleComplete() {
@@ -401,86 +334,131 @@ export function VisitDetailPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{visit.patientName}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {visit.visitDate} · {visit.doctorName}
-            {visit.department && <span> · {visit.department}</span>}
-            {' · '}
-            <span className={`font-medium ${isCompleted ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}>
-              {visit.status}
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {visit.visitDate} · {visit.doctorName}
             </span>
-          </p>
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColors[visit.status] ?? statusColors.InProgress}`}>
+              {visit.status === 'InProgress' ? 'In Progress' : visit.status}
+            </span>
+          </div>
         </div>
-        <button
-          onClick={() => navigate('/consultations')}
-          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-        >
+        <button onClick={() => navigate('/consultations')}
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
           ← Back
         </button>
       </div>
 
-      {/* Vitals */}
+      {/* Triage section — Nurse */}
       <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Vitals</h3>
-          {!editing && !isCompleted && (
-            <button onClick={startEdit} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Edit</button>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Triage</h3>
+            <span className="text-xs text-gray-400 dark:text-gray-500">— Nurse</span>
+            {(visit.status === 'Triaged' || visit.status === 'Completed') && (
+              <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
+                Triaged
+              </span>
+            )}
+          </div>
+          {!editingTriage && !isCompleted && (
+            <button onClick={startEditTriage} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+              {visit.status === 'InProgress' ? 'Record Vitals' : 'Edit'}
+            </button>
           )}
         </div>
 
-        {!editing ? (
-          <div className="grid grid-cols-3 gap-4">
-            <Field label="Blood Pressure" value={visit.bloodPressureSystolic && visit.bloodPressureDiastolic ? `${visit.bloodPressureSystolic}/${visit.bloodPressureDiastolic} mmHg` : null} />
-            <Field label="Weight" value={visit.weightKg ? `${visit.weightKg} kg` : null} />
-            <Field label="Height" value={visit.heightCm ? `${visit.heightCm} cm` : null} />
-            <Field label="Temperature" value={visit.temperatureCelsius ? `${visit.temperatureCelsius} °C` : null} />
-            <Field label="Pulse Rate" value={visit.pulseRate ? `${visit.pulseRate} bpm` : null} />
-            <Field label="O₂ Saturation" value={visit.oxygenSaturation ? `${visit.oxygenSaturation}%` : null} />
+        {!editingTriage ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <Field label="Blood Pressure"
+                value={visit.bloodPressureSystolic && visit.bloodPressureDiastolic
+                  ? `${visit.bloodPressureSystolic}/${visit.bloodPressureDiastolic} mmHg` : null} />
+              <Field label="Weight" value={visit.weightKg ? `${visit.weightKg} kg` : null} />
+              <Field label="Height" value={visit.heightCm ? `${visit.heightCm} cm` : null} />
+              <Field label="Temperature" value={visit.temperatureCelsius ? `${visit.temperatureCelsius} °C` : null} />
+              <Field label="Pulse Rate" value={visit.pulseRate ? `${visit.pulseRate} bpm` : null} />
+              <Field label="O₂ Saturation" value={visit.oxygenSaturation ? `${visit.oxygenSaturation}%` : null} />
+            </div>
+            <Field label="Chief Complaint" value={visit.chiefComplaint} />
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>Systolic (mmHg)</label>
-              <input type="number" value={form.bloodPressureSystolic ?? ''} onChange={(e) => set('bloodPressureSystolic', numOrNull(e.target.value) as number | null)} className={inputClass} />
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Systolic (mmHg)</label>
+                <input type="number" value={triageForm.bloodPressureSystolic ?? ''} className={inputClass}
+                  onChange={(e) => setTriageForm((f) => ({ ...f, bloodPressureSystolic: numOrNull(e.target.value) as number | null }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Diastolic (mmHg)</label>
+                <input type="number" value={triageForm.bloodPressureDiastolic ?? ''} className={inputClass}
+                  onChange={(e) => setTriageForm((f) => ({ ...f, bloodPressureDiastolic: numOrNull(e.target.value) as number | null }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Weight (kg)</label>
+                <input type="number" step="0.1" value={triageForm.weightKg ?? ''} className={inputClass}
+                  onChange={(e) => setTriageForm((f) => ({ ...f, weightKg: numOrNull(e.target.value) }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Height (cm)</label>
+                <input type="number" step="0.1" value={triageForm.heightCm ?? ''} className={inputClass}
+                  onChange={(e) => setTriageForm((f) => ({ ...f, heightCm: numOrNull(e.target.value) }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Temperature (°C)</label>
+                <input type="number" step="0.1" value={triageForm.temperatureCelsius ?? ''} className={inputClass}
+                  onChange={(e) => setTriageForm((f) => ({ ...f, temperatureCelsius: numOrNull(e.target.value) }))} />
+              </div>
+              <div>
+                <label className={labelClass}>Pulse Rate (bpm)</label>
+                <input type="number" value={triageForm.pulseRate ?? ''} className={inputClass}
+                  onChange={(e) => setTriageForm((f) => ({ ...f, pulseRate: numOrNull(e.target.value) as number | null }))} />
+              </div>
+              <div>
+                <label className={labelClass}>O₂ Saturation (%)</label>
+                <input type="number" step="0.1" value={triageForm.oxygenSaturation ?? ''} className={inputClass}
+                  onChange={(e) => setTriageForm((f) => ({ ...f, oxygenSaturation: numOrNull(e.target.value) }))} />
+              </div>
             </div>
             <div>
-              <label className={labelClass}>Diastolic (mmHg)</label>
-              <input type="number" value={form.bloodPressureDiastolic ?? ''} onChange={(e) => set('bloodPressureDiastolic', numOrNull(e.target.value) as number | null)} className={inputClass} />
+              <label className={labelClass}>Chief Complaint</label>
+              <textarea rows={2} value={triageForm.chiefComplaint ?? ''} className={textareaClass}
+                onChange={(e) => setTriageForm((f) => ({ ...f, chiefComplaint: e.target.value || null }))} />
             </div>
-            <div>
-              <label className={labelClass}>Weight (kg)</label>
-              <input type="number" step="0.1" value={form.weightKg ?? ''} onChange={(e) => set('weightKg', numOrNull(e.target.value))} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Height (cm)</label>
-              <input type="number" step="0.1" value={form.heightCm ?? ''} onChange={(e) => set('heightCm', numOrNull(e.target.value))} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Temperature (°C)</label>
-              <input type="number" step="0.1" value={form.temperatureCelsius ?? ''} onChange={(e) => set('temperatureCelsius', numOrNull(e.target.value))} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>Pulse Rate (bpm)</label>
-              <input type="number" value={form.pulseRate ?? ''} onChange={(e) => set('pulseRate', numOrNull(e.target.value) as number | null)} className={inputClass} />
-            </div>
-            <div>
-              <label className={labelClass}>O₂ Saturation (%)</label>
-              <input type="number" step="0.1" value={form.oxygenSaturation ?? ''} onChange={(e) => set('oxygenSaturation', numOrNull(e.target.value))} className={inputClass} />
+            <div className="flex gap-3">
+              <button onClick={handleSaveTriage} disabled={triageVisit.isPending}
+                className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                {triageVisit.isPending ? 'Saving...' : 'Save Triage'}
+              </button>
+              <button onClick={() => setEditingTriage(false)}
+                className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                Cancel
+              </button>
             </div>
           </div>
         )}
       </section>
 
-      {/* Clinical Notes */}
+      {/* Consultation section — Doctor */}
       <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Clinical Notes</h3>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Consultation</h3>
+            <span className="text-xs text-gray-400 dark:text-gray-500">— Doctor</span>
+          </div>
+          {!editingNotes && !isCompleted && (
+            <button onClick={startEditNotes} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">Edit</button>
+          )}
+        </div>
 
-        {!editing ? (
+        {!editingNotes ? (
           <div className="space-y-3">
             <Field label="Department" value={visit.department} />
-            <Field label="Chief Complaint" value={visit.chiefComplaint} />
             <Field label="Symptoms" value={visit.symptoms} />
             <Field label="Diagnosis" value={visit.diagnosis} />
             <Field label="Treatment" value={visit.treatment} />
@@ -491,15 +469,11 @@ export function VisitDetailPage() {
           <div className="space-y-3">
             <div>
               <label className={labelClass}>Department</label>
-              <input
-                value={form.department ?? ''}
-                onChange={(e) => set('department', e.target.value || null)}
+              <input value={notesForm.department ?? ''} className={inputClass}
                 placeholder="e.g. Outpatient, Emergency, ICU"
-                className={inputClass}
-              />
+                onChange={(e) => setNotesForm((f) => ({ ...f, department: e.target.value || null }))} />
             </div>
             {([
-              ['chiefComplaint', 'Chief Complaint'],
               ['symptoms', 'Symptoms'],
               ['diagnosis', 'Diagnosis'],
               ['treatment', 'Treatment'],
@@ -508,14 +482,20 @@ export function VisitDetailPage() {
             ] as const).map(([key, lbl]) => (
               <div key={key}>
                 <label className={labelClass}>{lbl}</label>
-                <textarea
-                  rows={2}
-                  value={form[key] ?? ''}
-                  onChange={(e) => set(key, e.target.value || null)}
-                  className={textareaClass}
-                />
+                <textarea rows={2} value={notesForm[key] ?? ''} className={textareaClass}
+                  onChange={(e) => setNotesForm((f) => ({ ...f, [key]: e.target.value || null }))} />
               </div>
             ))}
+            <div className="flex gap-3">
+              <button onClick={handleSaveNotes} disabled={updateVisit.isPending}
+                className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                {updateVisit.isPending ? 'Saving...' : 'Save Notes'}
+              </button>
+              <button onClick={() => setEditingNotes(false)}
+                className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+                Cancel
+              </button>
+            </div>
           </div>
         )}
       </section>
@@ -523,33 +503,15 @@ export function VisitDetailPage() {
       {/* Prescriptions */}
       <PrescriptionsSection visitId={id!} isCompleted={isCompleted} />
 
-      {/* Actions */}
-      {!isCompleted && (
-        <div className="flex gap-3">
-          {editing ? (
-            <>
-              <button
-                onClick={handleSave}
-                disabled={updateVisit.isPending}
-                className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
-              >
-                {updateVisit.isPending ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => setEditing(false)}
-                className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                Cancel
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={handleComplete}
-              disabled={completeVisit.isPending}
-              className="border border-green-300 dark:border-green-800 text-green-700 dark:text-green-400 rounded-md px-4 py-2 text-sm font-medium hover:bg-green-50 dark:hover:bg-green-950 disabled:opacity-50"
-            >
-              {completeVisit.isPending ? 'Completing...' : 'Complete Visit'}
-            </button>
+      {/* Complete Visit */}
+      {!isCompleted && !editingTriage && !editingNotes && (
+        <div className="flex items-center gap-4">
+          <button onClick={handleComplete} disabled={completeVisit.isPending}
+            className="bg-green-600 hover:bg-green-700 text-white rounded-md px-5 py-2 text-sm font-medium disabled:opacity-50">
+            {completeVisit.isPending ? 'Completing...' : 'Complete Visit'}
+          </button>
+          {visit.status === 'InProgress' && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">Triage not yet recorded</p>
           )}
         </div>
       )}

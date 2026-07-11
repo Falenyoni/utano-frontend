@@ -32,3 +32,11 @@ export async function deactivateMedicalAid(id: string): Promise<void> {
   const response = await apiFetch(`/api/medical-aids/${id}/deactivate`, { method: 'PUT' })
   if (!response.ok) throw new Error('Failed to deactivate medical aid')
 }
+
+export async function updateMedicalAid(id: string, name: string, code: string): Promise<void> {
+  const response = await apiFetch(`/api/medical-aids/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ name, code }),
+  })
+  if (!response.ok) throw new Error('Failed to update medical aid')
+}

@@ -8,9 +8,11 @@ const navItems = [
   { to: '/appointments', label: 'Appointments', icon: '📅' },
   { to: '/consultations', label: 'Consultations', icon: '📋' },
   { to: '/billing', label: 'Billing', icon: '💳' },
+  { to: '/dispensary', label: 'Dispensary', icon: '🧪' },
   { to: '/inventory', label: 'Inventory', icon: '💊' },
   { to: '/claims', label: 'Med Aid Claims', icon: '🏥' },
   { to: '/reports', label: 'Reports', icon: '📊' },
+  { to: '/admin/audit-log', label: 'Audit Log', icon: '📜' },
 ]
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>

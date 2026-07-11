@@ -14,6 +14,10 @@ export interface InvoiceSummary {
   balanceDue: number
   visitId: string | null
   createdAt: string
+  medicalAidId: string | null
+  medicalAidName: string | null
+  medAidClaimAmount: number
+  medAidClaimStatus: string
 }
 
 export interface LineItemRow {
@@ -88,12 +92,16 @@ export interface PagedInvoices {
 export async function getInvoices(params: {
   patientName?: string; status?: string
   dateFrom?: string; dateTo?: string; page?: number; pageSize?: number
+  hasMedicalAid?: boolean; medAidClaimStatus?: string; outstanding?: boolean
 }): Promise<PagedInvoices> {
   const q = new URLSearchParams()
   if (params.patientName) q.set('patientName', params.patientName)
   if (params.status) q.set('status', params.status)
   if (params.dateFrom) q.set('dateFrom', params.dateFrom)
   if (params.dateTo) q.set('dateTo', params.dateTo)
+  if (params.hasMedicalAid) q.set('hasMedicalAid', 'true')
+  if (params.medAidClaimStatus) q.set('medAidClaimStatus', params.medAidClaimStatus)
+  if (params.outstanding) q.set('outstanding', 'true')
   q.set('page', String(params.page ?? 1))
   q.set('pageSize', String(params.pageSize ?? 20))
   const res = await apiFetch(`/api/billing/invoices?${q}`, { method: 'GET' })
@@ -161,5 +169,72 @@ export async function createPaymentPlan(invoiceId: string, req: {
     method: 'POST', body: JSON.stringify(req)
   })
   if (!res.ok) throw new Error('Failed to create payment plan')
+  return res.json()
+}
+
+export async function submitClaim(invoiceId: string, claimAmount: number): Promise<void> {
+  const res = await apiFetch(`/api/billing/invoices/${invoiceId}/submit-claim`, {
+    method: 'PUT', body: JSON.stringify({ claimAmount }),
+  })
+  if (!res.ok) throw new Error('Failed to submit claim')
+}
+
+export async function updateClaimStatus(invoiceId: string, status: 'Approved' | 'Rejected'): Promise<void> {
+  const res = await apiFetch(`/api/billing/invoices/${invoiceId}/claim-status`, {
+    method: 'PUT', body: JSON.stringify({ status }),
+  })
+  if (!res.ok) throw new Error('Failed to update claim status')
+}
+
+export interface RevenueSummary {
+  totalInvoiced: number
+  totalCollected: number
+  totalOutstanding: number
+  invoiceCount: number
+  paidCount: number
+  outstandingCount: number
+  byMonth: { month: string; invoiced: number; collected: number }[]
+}
+
+export async function getRevenueSummary(params: { dateFrom?: string; dateTo?: string }): Promise<RevenueSummary> {
+  const q = new URLSearchParams()
+  if (params.dateFrom) q.set('dateFrom', params.dateFrom)
+  if (params.dateTo) q.set('dateTo', params.dateTo)
+  const res = await apiFetch(`/api/billing/reports/revenue?${q}`, { method: 'GET' })
+  if (!res.ok) throw new Error('Failed to fetch revenue summary')
+  return res.json()
+}
+
+export interface VisitsByDoctorRow {
+  doctorName: string
+  total: number
+  completed: number
+  inProgress: number
+}
+
+export async function getVisitsByDoctor(params: { dateFrom?: string; dateTo?: string }): Promise<VisitsByDoctorRow[]> {
+  const q = new URLSearchParams()
+  if (params.dateFrom) q.set('dateFrom', params.dateFrom)
+  if (params.dateTo) q.set('dateTo', params.dateTo)
+  const res = await apiFetch(`/api/clinical/reports/visits-by-doctor?${q}`, { method: 'GET' })
+  if (!res.ok) throw new Error('Failed to fetch visits by doctor')
+  return res.json()
+}
+
+export interface GenderBreakdown { male: number; female: number; other: number; unknown: number }
+export interface AgeGroupBreakdown { under18: number; age18to35: number; age36to50: number; age51to65: number; over65: number; unknown: number }
+export interface DoctorDemographicsRow { doctorName: string; total: number; gender: GenderBreakdown; ageGroups: AgeGroupBreakdown }
+export interface VisitDemographics {
+  overallGender: GenderBreakdown
+  overallAgeGroups: AgeGroupBreakdown
+  byDoctor: DoctorDemographicsRow[]
+}
+
+export async function getVisitDemographics(params: { dateFrom?: string; dateTo?: string }): Promise<VisitDemographics> {
+  const q = new URLSearchParams()
+  if (params.dateFrom) q.set('dateFrom', params.dateFrom)
+  if (params.dateTo) q.set('dateTo', params.dateTo)
+  const res = await apiFetch(`/api/clinical/reports/visit-demographics?${q}`, { method: 'GET' })
+  if (!res.ok) throw new Error('Failed to fetch visit demographics')
   return res.json()
 }

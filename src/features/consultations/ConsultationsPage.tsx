@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useVisits } from './useVisits'
-import { useDoctors } from '@/features/appointments/useAppointments'
 
 function todayISO() {
   return new Date().toISOString().split('T')[0]
@@ -18,8 +17,6 @@ export function ConsultationsPage() {
   const [page, setPage] = useState(1)
 
   const { data, isLoading, error } = useVisits({ date, page })
-  const { data: doctors } = useDoctors()
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

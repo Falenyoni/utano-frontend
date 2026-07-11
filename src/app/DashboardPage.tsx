@@ -2,6 +2,9 @@ import { Link } from 'react-router'
 import { usePatients } from '@/features/patients/usePatients'
 import { useAppointments } from '@/features/appointments/useAppointments'
 import { useVisits } from '@/features/consultations/useVisits'
+import { useQuery } from '@tanstack/react-query'
+import { getInvoices } from '@/features/billing/billingApi'
+import { getStockItems } from '@/features/inventory/inventoryApi'
 
 function todayISO() {
   return new Date().toISOString().split('T')[0]
@@ -78,6 +81,14 @@ export function DashboardPage() {
   const { data: waitingAppts } = useAppointments({ date: today, status: 'Scheduled', pageSize: 1 })
   const { data: inProgressAppts } = useAppointments({ date: today, status: 'InProgress', pageSize: 1 })
   const { data: todayVisits } = useVisits({ date: today, pageSize: 5 })
+  const { data: outstandingInvoices } = useQuery({
+    queryKey: ['invoices', 'outstanding'],
+    queryFn: () => getInvoices({ status: 'Issued', pageSize: 1 }),
+  })
+  const { data: lowStock } = useQuery({
+    queryKey: ['stock-items', 'low-stock'],
+    queryFn: () => getStockItems({ lowStockOnly: true, activeOnly: true, pageSize: 1 }),
+  })
 
   const totalCount = totalPatients?.totalCount
   const activeCount = activePatients?.totalCount
@@ -139,7 +150,7 @@ export function DashboardPage() {
       </div>
 
       {/* Alert stats */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Overdue"
           value={overdueCount}
@@ -153,6 +164,20 @@ export function DashboardPage() {
           sub="Today"
           to="/appointments"
           color={noShowCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}
+        />
+        <StatCard
+          label="Outstanding Invoices"
+          value={outstandingInvoices?.totalCount}
+          sub="Issued, awaiting payment"
+          to="/billing"
+          color={(outstandingInvoices?.totalCount ?? 0) > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-gray-100'}
+        />
+        <StatCard
+          label="Low Stock Items"
+          value={lowStock?.totalCount}
+          sub="Below reorder level"
+          to="/inventory"
+          color={(lowStock?.totalCount ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}
         />
       </div>
 
