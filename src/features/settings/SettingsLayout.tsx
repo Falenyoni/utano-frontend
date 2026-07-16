@@ -1,6 +1,8 @@
 import { NavLink, Outlet } from 'react-router'
 
 const settingsNav = [
+  { to: '/settings/users', label: 'Users' },
+  { to: '/settings/roles', label: 'Roles & Permissions' },
   { to: '/settings/staff', label: 'Staff & Doctors' },
   { to: '/settings/medical-aids', label: 'Medical Aid Schemes' },
   { to: '/settings/service-pricing', label: 'Service Pricing' },

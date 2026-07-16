@@ -9,8 +9,12 @@ export interface LoginResponse {
   fullName: string
   email: string
   role: string
+  roles: string[]
+  permissions: string[]
   practiceId: string
   practiceName: string
+  primaryColor: string | null
+  logoBase64: string | null
   accessToken: string
   refreshToken: string
   expiresAt: string
