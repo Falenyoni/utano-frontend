@@ -25,11 +25,7 @@ async function importUser(row: Record<string, string>) {
   const password  = row.password?.trim()
   const role      = normalizeRole(row.role ?? '')
 
-  const res = await createUser({ firstName, lastName, email, password, role })
-    .then(() => null)
-    .catch((err: Error) => { throw err })
-
-  return res
+  await createUser({ firstName, lastName, email, password, role })
 }
 
 interface Props { onClose: () => void; onDone: () => void }

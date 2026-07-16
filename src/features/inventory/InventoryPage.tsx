@@ -370,12 +370,12 @@ export function InventoryPage() {
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">SKU</label>
-                  <input value={editForm.sku} onChange={(e) => setEditForm((f) => ({ ...f, sku: e.target.value }))} className={inputCls} />
+                  <input value={editForm.sku ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, sku: e.target.value }))} className={inputCls} />
                 </div>
               </div>
               <div>
                 <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Description</label>
-                <textarea value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
+                <textarea value={editForm.description ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
