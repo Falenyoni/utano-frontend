@@ -4,6 +4,7 @@ import {
   getDoctors,
   bookAppointment,
   cancelAppointment,
+  checkInAppointment,
   rescheduleAppointment,
   type GetAppointmentsParams,
   type BookAppointmentRequest,
@@ -28,6 +29,14 @@ export function useBookAppointment() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (request: BookAppointmentRequest) => bookAppointment(request),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
+  })
+}
+
+export function useCheckInAppointment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => checkInAppointment(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
   })
 }

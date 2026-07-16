@@ -7,14 +7,13 @@ interface SidebarProps {
   onClose: () => void
 }
 
-const navItems = [
+const baseNavItems = [
   { to: '/', label: 'Dashboard', icon: '🏠', end: true },
   { to: '/waiting-room', label: 'Waiting Room', icon: '🪑' },
   { to: '/patients', label: 'Patients', icon: '👤' },
   { to: '/appointments', label: 'Appointments', icon: '📅' },
   { to: '/consultations', label: 'Consultations', icon: '📋' },
   { to: '/billing', label: 'Billing', icon: '💳' },
-  { to: '/dispensary', label: 'Dispensary', icon: '🧪' },
   { to: '/inventory', label: 'Inventory', icon: '💊' },
   { to: '/claims', label: 'Med Aid Claims', icon: '🏥' },
   { to: '/reports', label: 'Reports', icon: '📊' },
@@ -37,6 +36,10 @@ const linkStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties | u
   isActive ? activeLinkStyle : undefined
 
 function NavContent({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
+  const navItems = user?.hasDispensary
+    ? [...baseNavItems.slice(0, 6), { to: '/dispensary', label: 'Dispensary', icon: '🧪' }, ...baseNavItems.slice(6)]
+    : baseNavItems
+
   return (
     <>
       <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-800">

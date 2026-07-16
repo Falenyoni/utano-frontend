@@ -6,6 +6,7 @@ export interface PracticeDetail {
   contactEmail: string
   contactPhone: string
   physicalAddress: string
+  hasDispensary: boolean
 }
 
 export interface UpdatePracticeRequest {
@@ -13,6 +14,7 @@ export interface UpdatePracticeRequest {
   contactEmail: string
   contactPhone: string
   physicalAddress: string
+  hasDispensary: boolean
 }
 
 export async function getPractice(): Promise<PracticeDetail> {

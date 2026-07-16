@@ -40,6 +40,7 @@ export interface UserRow {
   role: string
   status: string
   createdAt: string
+  roleIds: string[]
 }
 
 export interface CreateRoleRequest {

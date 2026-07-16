@@ -1,15 +1,28 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { usePatients } from './usePatients'
+import { PatientImportModal } from './PatientImportModal'
+import { useAuth } from '@/shared/lib/auth/AuthContext'
 
 export function PatientsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [page, setPage] = useState(1)
+  const [showImport, setShowImport] = useState(false)
+  const qc = useQueryClient()
+  const { hasAnyRole } = useAuth()
 
   const { data, isLoading, error } = usePatients({ searchTerm, page, pageSize: 20 })
 
   return (
     <div className="space-y-6">
+      {showImport && (
+        <PatientImportModal
+          onClose={() => setShowImport(false)}
+          onDone={() => { qc.invalidateQueries({ queryKey: ['patients'] }); setShowImport(false) }}
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Patients</h2>
@@ -17,12 +30,22 @@ export function PatientsPage() {
             {data ? `${data.totalCount} total` : 'Loading patient records...'}
           </p>
         </div>
-        <Link
-          to="/patients/new"
-          className="inline-block bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700"
-        >
-          + Register
-        </Link>
+        <div className="flex items-center gap-2">
+          {hasAnyRole('Admin') && (
+            <button
+              onClick={() => setShowImport(true)}
+              className="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              ↑ Import
+            </button>
+          )}
+          <Link
+            to="/patients/new"
+            className="inline-block bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700"
+          >
+            + Register
+          </Link>
+        </div>
       </div>
 
       <input

@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
-import { useAppointments, useCancelAppointment, useRescheduleAppointment } from './useAppointments'
+import { useAppointments, useCancelAppointment, useCheckInAppointment, useRescheduleAppointment } from './useAppointments'
 
 const STATUS_COLORS: Record<string, string> = {
-  Scheduled: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-  Confirmed: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  Scheduled:  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  Confirmed:  'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  CheckedIn:  'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300',
   InProgress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
-  Completed: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
-  Cancelled: 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400',
-  NoShow: 'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400',
+  Completed:  'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  Cancelled:  'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400',
+  NoShow:     'bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-400',
 }
 
-const ACTIVE_STATUSES = ['Scheduled', 'Confirmed', 'InProgress']
+const ACTIVE_STATUSES = ['Scheduled', 'Confirmed', 'CheckedIn', 'InProgress']
 
 function todayISO() {
   return new Date().toISOString().split('T')[0]
@@ -32,6 +33,7 @@ export function AppointmentsPage() {
 
   const { data, isLoading, error } = useAppointments({ date, page, pageSize: 20 })
   const cancelMutation = useCancelAppointment()
+  const checkInMutation = useCheckInAppointment()
   const rescheduleMutation = useRescheduleAppointment()
 
   function openReschedule(apptId: string, apptDate: string, start: string, end: string) {
@@ -118,6 +120,15 @@ export function AppointmentsPage() {
                 </span>
                 {ACTIVE_STATUSES.includes(appt.status) && (
                   <div className="flex gap-3">
+                    {(appt.status === 'Scheduled' || appt.status === 'Confirmed') && (
+                      <button
+                        onClick={() => checkInMutation.mutate(appt.id)}
+                        disabled={checkInMutation.isPending}
+                        className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium disabled:opacity-50"
+                      >
+                        Check In
+                      </button>
+                    )}
                     {appt.status !== 'InProgress' && (
                       <button
                         onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
@@ -169,6 +180,15 @@ export function AppointmentsPage() {
                   <td className="px-4 py-2">
                     {ACTIVE_STATUSES.includes(appt.status) && (
                       <div className="flex items-center justify-end gap-3">
+                        {(appt.status === 'Scheduled' || appt.status === 'Confirmed') && (
+                          <button
+                            onClick={() => checkInMutation.mutate(appt.id)}
+                            disabled={checkInMutation.isPending}
+                            className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium disabled:opacity-50"
+                          >
+                            Check In
+                          </button>
+                        )}
                         {appt.status !== 'InProgress' && (
                           <button
                             onClick={() => navigate('/consultations/new', {

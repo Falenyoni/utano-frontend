@@ -1,6 +1,7 @@
 import { useState, useRef, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { useBookAppointment, useDoctors } from './useAppointments'
+import { checkInAppointment } from './appointmentsApi'
 import { getPatients, quickRegisterPatient } from '@/features/patients/patientsApi'
 
 function todayISO() {
@@ -124,7 +125,7 @@ export function WalkInPage() {
     const doctor = doctors?.find((d) => d.id === doctorId)
 
     try {
-      await bookAppointment.mutateAsync({
+      const booked = await bookAppointment.mutateAsync({
         patientId,
         patientName,
         doctorId,
@@ -135,6 +136,8 @@ export function WalkInPage() {
         type: 'WalkIn',
         notes: notes || null,
       })
+      // Walk-in patients are physically present — check them in immediately
+      await checkInAppointment(booked.id)
       navigate('/waiting-room')
     } catch {
       setError('Failed to register walk-in. Please try again.')

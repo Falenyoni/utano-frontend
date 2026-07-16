@@ -11,6 +11,7 @@ export interface User {
   practiceName: string
   primaryColor?: string | null
   logoBase64?: string | null
+  hasDispensary?: boolean
 }
 
 function applyBrandingVars(primaryColor?: string | null) {
@@ -94,7 +95,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function hasAnyRole(...roles: string[]): boolean {
-    return roles.some((r) => user?.roles.includes(r) ?? false)
+    if (!user) return false
+    return roles.some((r) => user.roles.includes(r) || user.role === r)
   }
 
   function updateBranding(primaryColor: string | null, logoBase64: string | null) {

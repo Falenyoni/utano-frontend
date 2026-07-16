@@ -10,15 +10,19 @@ import {
   type UserRow,
   type RoleRow,
 } from './rbacApi'
+import { UserImportModal } from './UserImportModal'
+import { useAuth } from '@/shared/lib/auth/AuthContext'
 
 const emptyCreate = { firstName: '', lastName: '', email: '', password: '', role: 'Receptionist' }
 
 export function UsersPage() {
   const qc = useQueryClient()
+  const { hasAnyRole } = useAuth()
   const { data: users = [], isLoading } = useQuery({ queryKey: ['users'], queryFn: getUsers })
   const { data: roles = [] } = useQuery({ queryKey: ['roles'], queryFn: getRoles })
 
   const [showCreate, setShowCreate] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [assignUser, setAssignUser] = useState<UserRow | null>(null)
   const [assignedRoleIds, setAssignedRoleIds] = useState<string[]>([])
   const [createForm, setCreateForm] = useState(emptyCreate)
@@ -51,13 +55,26 @@ export function UsersPage() {
 
   function openAssign(u: UserRow) {
     setAssignUser(u)
-    setAssignedRoleIds([])
+    const fromAssignments = u.roleIds ?? []
+    const primaryRoleId = roles.find((r) => r.name === u.role)?.id
+    const initialIds =
+      primaryRoleId && !fromAssignments.includes(primaryRoleId)
+        ? [...fromAssignments, primaryRoleId]
+        : fromAssignments
+    setAssignedRoleIds(initialIds)
   }
 
   const activeRoles = roles.filter((r) => r.isActive)
 
   return (
     <div className="space-y-6">
+      {showImport && (
+        <UserImportModal
+          onClose={() => setShowImport(false)}
+          onDone={() => setShowImport(false)}
+        />
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Users</h3>
@@ -65,12 +82,22 @@ export function UsersPage() {
             Manage staff accounts and their role assignments
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
-        >
-          Add User
-        </button>
+        <div className="flex items-center gap-2">
+          {hasAnyRole('Admin') && (
+            <button
+              onClick={() => setShowImport(true)}
+              className="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              ↑ Import
+            </button>
+          )}
+          <button
+            onClick={() => setShowCreate(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
+          >
+            Add User
+          </button>
+        </div>
       </div>
 
       {isLoading ? (

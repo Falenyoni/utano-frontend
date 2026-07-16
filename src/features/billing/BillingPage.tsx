@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router'
 import { useInvoices, useCreateInvoice } from './useBilling'
 import { getPatients, getPatientById } from '@/features/patients/patientsApi'
 import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
+import { InvoiceDetailModal } from './InvoiceDetailModal'
 
 const STATUSES = ['Draft', 'Issued', 'PartiallyPaid', 'Paid', 'Void']
 
@@ -21,8 +21,7 @@ function formatCurrency(v: number) {
 const inputCls =
   'border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300'
 
-function NewInvoiceModal({ onClose }: { onClose: () => void }) {
-  const navigate = useNavigate()
+function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreated: (id: string) => void }) {
   const createInvoice = useCreateInvoice()
   const { data: allAids } = useMedicalAids()
 
@@ -71,7 +70,7 @@ function NewInvoiceModal({ onClose }: { onClose: () => void }) {
       medicalAidName: medicalAidName || null,
     })
     onClose()
-    navigate(`/billing/${result.id}`)
+    onCreated(result.id)
   }
 
   const activeAids = allAids?.filter((a) => a.isActive) ?? []
@@ -162,6 +161,7 @@ export function BillingPage() {
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
   const [showNewInvoice, setShowNewInvoice] = useState(false)
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null)
 
   const { data, isLoading } = useInvoices({ patientName, status, dateFrom, dateTo, page, pageSize: 20 })
   const invoices = data?.data ?? []
@@ -172,7 +172,8 @@ export function BillingPage() {
 
   return (
     <div className="space-y-4">
-      {showNewInvoice && <NewInvoiceModal onClose={() => setShowNewInvoice(false)} />}
+      {showNewInvoice && <NewInvoiceModal onClose={() => setShowNewInvoice(false)} onCreated={(id) => setSelectedInvoiceId(id)} />}
+      {selectedInvoiceId && <InvoiceDetailModal invoiceId={selectedInvoiceId} onClose={() => setSelectedInvoiceId(null)} />}
 
       <div className="flex items-center justify-between">
         <div>
@@ -236,8 +237,8 @@ export function BillingPage() {
             const today = new Date().toISOString().slice(0, 10)
             const isOverdue = inv.status !== 'Paid' && inv.status !== 'Void' && inv.dueDate < today
             return (
-              <Link key={inv.id} to={`/billing/${inv.id}`}
-                className="block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-3 space-y-1.5">
+              <button key={inv.id} onClick={() => setSelectedInvoiceId(inv.id)}
+                className="w-full text-left bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-3 space-y-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{inv.patientName}</p>
@@ -254,7 +255,7 @@ export function BillingPage() {
                     {isOverdue && <span className="ml-1 text-red-500">(overdue)</span>}
                   </span>
                 </div>
-              </Link>
+              </button>
             )
           })}
         </div>
@@ -289,9 +290,9 @@ export function BillingPage() {
               return (
                 <tr key={inv.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-4 py-3">
-                    <Link to={`/billing/${inv.id}`} className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
+                    <button onClick={() => setSelectedInvoiceId(inv.id)} className="font-medium text-blue-600 dark:text-blue-400 hover:underline">
                       {inv.invoiceNumber}
-                    </Link>
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-gray-900 dark:text-gray-100">
                     {inv.patientName}

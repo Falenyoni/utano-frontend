@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { useAddStockItem, useAdjustStock, useReceiveStock, useStockItems } from './useInventory'
-import type { AddStockItemRequest } from './inventoryApi'
+import { useQueryClient } from '@tanstack/react-query'
+import { useAddStockItem, useAdjustStock, useReceiveStock, useStockItems, useUpdateStockItem } from './useInventory'
+import type { AddStockItemRequest, StockItemSummary } from './inventoryApi'
+import { InventoryImportModal } from './InventoryImportModal'
+import { useAuth } from '@/shared/lib/auth/AuthContext'
 
 const CATEGORIES = ['Medication', 'Consumable', 'Equipment', 'Laboratory', 'Other']
 
@@ -26,12 +29,15 @@ const blankItem: AddStockItemRequest = {
 }
 
 export function InventoryPage() {
+  const { hasAnyRole } = useAuth()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [lowStockOnly, setLowStockOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [showAdd, setShowAdd] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [form, setForm] = useState<AddStockItemRequest>(blankItem)
+  const qc = useQueryClient()
   const [addError, setAddError] = useState('')
 
   const [receiveId, setReceiveId] = useState<string | null>(null)
@@ -43,10 +49,14 @@ export function InventoryPage() {
   const [adjustQty, setAdjustQty] = useState('')
   const [adjustNotes, setAdjustNotes] = useState('')
 
+  const [editItem, setEditItem] = useState<StockItemSummary | null>(null)
+  const [editForm, setEditForm] = useState<AddStockItemRequest>(blankItem)
+
   const { data, isLoading } = useStockItems({ search, category, lowStockOnly, activeOnly: true, page, pageSize: 20 })
   const addMutation = useAddStockItem()
   const receiveMutation = useReceiveStock()
   const adjustMutation = useAdjustStock()
+  const updateMutation = useUpdateStockItem()
 
   const items = data?.data ?? []
   const lowStockCount = items.filter((i) => i.isLowStock).length
@@ -83,6 +93,29 @@ export function InventoryPage() {
     )
   }
 
+  function openEdit(item: StockItemSummary) {
+    setEditItem(item)
+    setEditForm({
+      name: item.name,
+      sku: item.sku ?? '',
+      description: '',
+      category: item.category,
+      unit: item.unit,
+      sellingPrice: item.sellingPrice,
+      costPrice: item.costPrice,
+      reorderLevel: item.reorderLevel,
+    })
+  }
+
+  function handleEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editItem) return
+    updateMutation.mutate(
+      { id: editItem.id, ...editForm },
+      { onSuccess: () => setEditItem(null) },
+    )
+  }
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -94,12 +127,22 @@ export function InventoryPage() {
             </p>
           )}
         </div>
-        <button
-          onClick={() => { setShowAdd(true); setAddError('') }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          + Add Item
-        </button>
+        <div className="flex items-center gap-2">
+          {hasAnyRole('Admin') && (
+            <button
+              onClick={() => setShowImport(true)}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              ↑ Import
+            </button>
+          )}
+          <button
+            onClick={() => { setShowAdd(true); setAddError('') }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            + Add Item
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -182,6 +225,12 @@ export function InventoryPage() {
                     >
                       Adjust
                     </button>
+                    <button
+                      onClick={() => openEdit(item)}
+                      className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800"
+                    >
+                      Edit
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -204,6 +253,13 @@ export function InventoryPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {showImport && (
+        <InventoryImportModal
+          onClose={() => setShowImport(false)}
+          onDone={() => { qc.invalidateQueries({ queryKey: ['stock-items'] }); setShowImport(false) }}
+        />
       )}
 
       {/* Add Item Modal */}
@@ -294,6 +350,70 @@ export function InventoryPage() {
                 <button type="submit" disabled={receiveMutation.isPending}
                   className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60">
                   {receiveMutation.isPending ? 'Saving...' : 'Confirm'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Item Modal */}
+      {editItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Edit Item</h2>
+            <form onSubmit={handleEdit} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Name *</label>
+                  <input value={editForm.name} onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))} required className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">SKU</label>
+                  <input value={editForm.sku} onChange={(e) => setEditForm((f) => ({ ...f, sku: e.target.value }))} className={inputCls} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Description</label>
+                <textarea value={editForm.description} onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))} rows={2} className={`${inputCls} resize-none`} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Category *</label>
+                  <select value={editForm.category} onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))} className={inputCls}>
+                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Unit *</label>
+                  <input value={editForm.unit} onChange={(e) => setEditForm((f) => ({ ...f, unit: e.target.value }))} required className={inputCls} placeholder="e.g. Tablets, ml, Units" />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Selling Price *</label>
+                  <input type="number" min={0} step="0.01" value={editForm.sellingPrice} onChange={(e) => setEditForm((f) => ({ ...f, sellingPrice: Number(e.target.value) }))} required className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Cost Price</label>
+                  <input type="number" min={0} step="0.01" value={editForm.costPrice} onChange={(e) => setEditForm((f) => ({ ...f, costPrice: Number(e.target.value) }))} className={inputCls} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Reorder Level</label>
+                  <input type="number" min={0} value={editForm.reorderLevel} onChange={(e) => setEditForm((f) => ({ ...f, reorderLevel: Number(e.target.value) }))} className={inputCls} />
+                </div>
+              </div>
+              {updateMutation.isError && (
+                <p className="text-sm text-red-600 dark:text-red-400">{String(updateMutation.error)}</p>
+              )}
+              <div className="flex gap-3 justify-end pt-2">
+                <button type="button" onClick={() => setEditItem(null)}
+                  className="px-4 py-2 text-sm border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                  Cancel
+                </button>
+                <button type="submit" disabled={updateMutation.isPending}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60">
+                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

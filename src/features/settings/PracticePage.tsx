@@ -13,6 +13,7 @@ export function PracticePage() {
     contactEmail: '',
     contactPhone: '',
     physicalAddress: '',
+    hasDispensary: false,
   })
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,6 +30,7 @@ export function PracticePage() {
         contactEmail: practice.contactEmail,
         contactPhone: practice.contactPhone,
         physicalAddress: practice.physicalAddress,
+        hasDispensary: practice.hasDispensary,
       })
     }
   }, [practice])
@@ -116,6 +118,30 @@ export function PracticePage() {
               className={`${inputClass} resize-none`}
               placeholder="123 Main Street, Suburb, City, 1234"
             />
+          </div>
+
+          <div className="flex items-center justify-between rounded-md border border-gray-200 dark:border-gray-700 px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200">In-house Dispensary</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Enable to show the Dispensary queue and allow dispensing from stock during visits
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setForm((f) => ({ ...f, hasDispensary: !f.hasDispensary }))}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                form.hasDispensary ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+              }`}
+              role="switch"
+              aria-checked={form.hasDispensary}
+            >
+              <span
+                className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                  form.hasDispensary ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
           </div>
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}

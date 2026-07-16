@@ -7,6 +7,7 @@ import {
   type UserRow, type RoleRow,
 } from './rbacApi'
 import { useAuth } from '@/shared/lib/auth/AuthContext'
+import { UserImportModal } from './UserImportModal'
 import { DoctorsPage } from '@/features/doctors/DoctorsPage'
 import { MedicalAidsPage } from '@/features/medicalAids/MedicalAidsPage'
 import { ServicePricingPage } from './ServicePricingPage'
@@ -51,8 +52,10 @@ const emptyCreate = { firstName: '', lastName: '', email: '', password: '', role
 
 function UsersTab({ roles }: { roles: RoleRow[] }) {
   const qc = useQueryClient()
+  const { hasAnyRole } = useAuth()
   const [search, setSearch] = useState('')
   const [showCreate, setShowCreate] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [createForm, setCreateForm] = useState(emptyCreate)
   const [editUser, setEditUser] = useState<UserRow | null>(null)
   const [editForm, setEditForm] = useState({ firstName: '', lastName: '', role: '' })
@@ -98,7 +101,13 @@ function UsersTab({ roles }: { roles: RoleRow[] }) {
 
   function openAssign(u: UserRow) {
     setAssignUser(u)
-    setAssignedRoleIds([])
+    const fromAssignments = u.roleIds ?? []
+    const primaryRoleId = roles.find((r) => r.name === u.role)?.id
+    const initialIds =
+      primaryRoleId && !fromAssignments.includes(primaryRoleId)
+        ? [...fromAssignments, primaryRoleId]
+        : fromAssignments
+    setAssignedRoleIds(initialIds)
   }
 
   const toggleAssignRole = (id: string) =>
@@ -109,6 +118,13 @@ function UsersTab({ roles }: { roles: RoleRow[] }) {
 
   return (
     <>
+      {showImport && (
+        <UserImportModal
+          onClose={() => setShowImport(false)}
+          onDone={() => { qc.invalidateQueries({ queryKey: ['users'] }); setShowImport(false) }}
+        />
+      )}
+
       <div className="flex items-center justify-between mb-4">
         <input
           placeholder="Search users…"
@@ -116,12 +132,22 @@ function UsersTab({ roles }: { roles: RoleRow[] }) {
           onChange={(e) => setSearch(e.target.value)}
           className={`${inputCls} max-w-sm`}
         />
-        <button
-          onClick={() => setShowCreate(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
-        >
-          + Add User
-        </button>
+        <div className="flex items-center gap-2">
+          {hasAnyRole('Admin') && (
+            <button
+              onClick={() => setShowImport(true)}
+              className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              ↑ Import
+            </button>
+          )}
+          <button
+            onClick={() => setShowCreate(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          >
+            + Add User
+          </button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">

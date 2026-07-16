@@ -16,15 +16,20 @@ function waitingSince(createdAt: string) {
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  Scheduled: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  CheckedIn:  'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300',
   InProgress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  CheckedIn:  'Checked In',
+  InProgress: 'With Doctor',
 }
 
 export function WaitingRoomPage() {
   const navigate = useNavigate()
   const today = todayISO()
 
-  const { data: waiting, isLoading } = useAppointments({ date: today, status: 'Scheduled', pageSize: 100 })
+  const { data: waiting, isLoading } = useAppointments({ date: today, status: 'CheckedIn', pageSize: 100 })
   const { data: inProgress } = useAppointments({ date: today, status: 'InProgress', pageSize: 100 })
 
   const allPatients = [
@@ -80,13 +85,13 @@ export function WaitingRoomPage() {
                   </div>
                 </div>
                 <span className={`text-xs px-2 py-0.5 rounded font-medium shrink-0 ${STATUS_BADGE[appt.status] ?? ''}`}>
-                  {appt.status === 'InProgress' ? 'With Doctor' : 'Waiting'}
+                  {STATUS_LABEL[appt.status] ?? appt.status}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400 dark:text-gray-500">{waitingSince(appt.createdAt)}</span>
                 <div>
-                  {appt.status === 'Scheduled' && (
+                  {appt.status === 'CheckedIn' && (
                     <button
                       onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
                       className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 font-medium"
@@ -142,11 +147,11 @@ export function WaitingRoomPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span className={`inline-block text-xs px-2 py-0.5 rounded font-medium ${STATUS_BADGE[appt.status] ?? ''}`}>
-                      {appt.status === 'InProgress' ? 'With Doctor' : 'Waiting'}
+                      {STATUS_LABEL[appt.status] ?? appt.status}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {appt.status === 'Scheduled' && (
+                    {appt.status === 'CheckedIn' && (
                       <button
                         onClick={() => navigate('/consultations/new', {
                           state: {

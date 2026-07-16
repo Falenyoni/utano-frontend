@@ -96,6 +96,11 @@ export async function bookAppointment(request: BookAppointmentRequest): Promise<
   return res.json()
 }
 
+export async function checkInAppointment(id: string): Promise<void> {
+  const res = await apiFetch(`/api/appointments/${id}/check-in`, { method: 'PUT' })
+  if (!res.ok) throw new Error('Failed to check in appointment')
+}
+
 export async function cancelAppointment(id: string, reason: string): Promise<void> {
   const res = await apiFetch(`/api/appointments/${id}/cancel`, {
     method: 'PUT',
