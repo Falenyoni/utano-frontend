@@ -14,11 +14,6 @@ function fmtShort(n: number) {
   return String(Math.round(n))
 }
 
-function pct(num: number, den: number) {
-  if (den === 0) return '0%'
-  return `${Math.round((num / den) * 100)}%`
-}
-
 function monthLabel(iso: string) {
   const [y, m] = iso.split('-')
   return new Date(Number(y), Number(m) - 1).toLocaleDateString('en-ZA', {
