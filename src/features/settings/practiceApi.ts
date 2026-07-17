@@ -7,6 +7,8 @@ export interface PracticeDetail {
   contactPhone: string
   physicalAddress: string
   hasDispensary: boolean
+  adhozNumber: string | null
+  bpNumber: string | null
 }
 
 export interface UpdatePracticeRequest {
@@ -15,6 +17,8 @@ export interface UpdatePracticeRequest {
   contactPhone: string
   physicalAddress: string
   hasDispensary: boolean
+  adhozNumber: string | null
+  bpNumber: string | null
 }
 
 export async function getPractice(): Promise<PracticeDetail> {

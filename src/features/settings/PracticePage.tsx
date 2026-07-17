@@ -14,6 +14,8 @@ export function PracticePage() {
     contactPhone: '',
     physicalAddress: '',
     hasDispensary: false,
+    adhozNumber: null,
+    bpNumber: null,
   })
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,6 +33,8 @@ export function PracticePage() {
         contactPhone: practice.contactPhone,
         physicalAddress: practice.physicalAddress,
         hasDispensary: practice.hasDispensary,
+        adhozNumber: practice.adhozNumber,
+        bpNumber: practice.bpNumber,
       })
     }
   }, [practice])
@@ -107,6 +111,29 @@ export function PracticePage() {
               placeholder="+27 11 000 0000"
             />
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Adhoz Number</label>
+              <input
+                name="adhozNumber"
+                value={form.adhozNumber ?? ''}
+                onChange={e => { setForm(f => ({ ...f, adhozNumber: e.target.value || null })); setSaved(false) }}
+                className={inputClass}
+                placeholder="e.g. ADH-12345"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>BP Number</label>
+              <input
+                name="bpNumber"
+                value={form.bpNumber ?? ''}
+                onChange={e => { setForm(f => ({ ...f, bpNumber: e.target.value || null })); setSaved(false) }}
+                className={inputClass}
+                placeholder="e.g. BP-67890"
+              />
+            </div>
+          </div>
+
           <div>
             <label className={labelClass}>Physical Address</label>
             <textarea
