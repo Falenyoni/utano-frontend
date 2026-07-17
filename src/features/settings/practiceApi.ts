@@ -9,6 +9,7 @@ export interface PracticeDetail {
   hasDispensary: boolean
   adhozNumber: string | null
   bpNumber: string | null
+  logoBase64: string | null
 }
 
 export interface UpdatePracticeRequest {

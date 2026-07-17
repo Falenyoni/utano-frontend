@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { useInvoice, useAddLineItem, useRemoveLineItem, useIssueInvoice, useVoidInvoice, useRecordPayment, useCreatePaymentPlan } from './useBilling'
 import type { InstallmentRow } from './billingApi'
 
@@ -69,6 +71,82 @@ export default function InvoiceDetailPage() {
   const [planNotes, setPlanNotes] = useState('')
   const [planError, setPlanError] = useState('')
   const [planPreview, setPlanPreview] = useState<{ perInstallment: number } | null>(null)
+
+  function handleDownloadPdf() {
+    if (!invoice) return
+    const doc = new jsPDF()
+    const fv = (n: number) => `$${n.toFixed(2)}`
+
+    doc.setFontSize(20)
+    doc.setFont('helvetica', 'bold')
+    doc.text(invoice.invoiceNumber, 14, 22)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.setTextColor(120)
+    doc.text(`Status: ${invoice.status}`, 14, 30)
+    doc.setTextColor(0)
+    doc.text(`Patient: ${invoice.patientName}`, 14, 38)
+    if (invoice.doctorName) doc.text(`Doctor: ${invoice.doctorName}`, 14, 45)
+    const dateY = invoice.doctorName ? 52 : 45
+    doc.text(`Date: ${invoice.invoiceDate}`, 14, dateY)
+    if (invoice.dueDate) {
+      doc.text(`Due: ${new Date(invoice.dueDate).toLocaleDateString()}`, 14, dateY + 7)
+    }
+
+    const tableStartY = invoice.dueDate ? dateY + 15 : dateY + 8
+
+    autoTable(doc, {
+      startY: tableStartY,
+      head: [['Description', 'Type', 'Qty', 'Unit Price', 'Disc%', 'Amount']],
+      body: invoice.lineItems.map((li) => [
+        li.description,
+        li.type,
+        li.quantity,
+        fv(li.unitPrice),
+        li.discountPercent > 0 ? `${li.discountPercent}%` : '—',
+        fv(li.amount),
+      ]),
+      foot: [['', '', '', '', 'Total', fv(invoice.totalAmount)]],
+      footStyles: { fontStyle: 'bold' },
+      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
+      styles: { fontSize: 9 },
+    })
+
+    const y1 = ((doc as any).lastAutoTable?.finalY ?? 100) + 8
+
+    doc.setFontSize(9)
+    doc.setTextColor(80)
+    doc.text(`Total:`, 140, y1)
+    doc.text(`Paid:`, 140, y1 + 6)
+    doc.setTextColor(0)
+    doc.setFont('helvetica', 'bold')
+    doc.text(`Balance Due:`, 140, y1 + 14)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(80)
+    doc.text(fv(invoice.totalAmount), 196, y1, { align: 'right' })
+    doc.text(fv(invoice.amountPaid), 196, y1 + 6, { align: 'right' })
+    doc.setTextColor(0)
+    doc.setFont('helvetica', 'bold')
+    doc.text(fv(invoice.balanceDue), 196, y1 + 14, { align: 'right' })
+    doc.setFont('helvetica', 'normal')
+
+    if (invoice.payments.length > 0) {
+      autoTable(doc, {
+        startY: y1 + 22,
+        head: [['Payment Date', 'Method', 'Amount', 'Reference']],
+        body: invoice.payments.map((p) => [
+          new Date(p.paymentDate).toLocaleDateString(),
+          p.method,
+          fv(p.amount),
+          p.reference ?? '—',
+        ]),
+        columnStyles: { 2: { halign: 'right' } },
+        styles: { fontSize: 9 },
+      })
+    }
+
+    doc.save(`${invoice.invoiceNumber}.pdf`)
+  }
 
   function handleAddLine(e: React.FormEvent) {
     e.preventDefault()
@@ -142,6 +220,12 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button
+            onClick={handleDownloadPdf}
+            className="text-sm px-3 py-2 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            ↓ Download PDF
+          </button>
           {canEdit && (
             <button onClick={() => issueInvoice.mutate(invoice.id)}
               disabled={issueInvoice.isPending || invoice.lineItems.length === 0}

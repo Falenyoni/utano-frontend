@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { useAppointments, useCancelAppointment, useCheckInAppointment, useRescheduleAppointment } from './useAppointments'
+import { ImportAppointmentsModal } from './ImportAppointmentsModal'
 
 const STATUS_COLORS: Record<string, string> = {
   Scheduled:  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
@@ -23,6 +24,7 @@ export function AppointmentsPage() {
   const [date, setDate] = useState(todayISO())
   const [page, setPage] = useState(1)
 
+  const [showImport, setShowImport] = useState(false)
   const [cancelId, setCancelId] = useState<string | null>(null)
   const [cancelReason, setCancelReason] = useState('')
 
@@ -64,6 +66,7 @@ export function AppointmentsPage() {
 
   return (
     <div className="space-y-6">
+      {showImport && <ImportAppointmentsModal onClose={() => setShowImport(false)} />}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Appointments</h2>
@@ -72,6 +75,12 @@ export function AppointmentsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md px-4 py-2 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            ↑ Import CSV
+          </button>
           <Link
             to="/appointments/walk-in"
             className="inline-block border border-blue-600 text-blue-600 dark:text-blue-400 rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-50 dark:hover:bg-blue-950"

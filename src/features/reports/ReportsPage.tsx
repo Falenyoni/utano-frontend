@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { getInvoices, getRevenueSummary, getVisitsByDoctor, getVisitDemographics } from '@/features/billing/billingApi'
 import { getStockItems } from '@/features/inventory/inventoryApi'
 
 function fmt(n: number) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function fc(n: number) {
+  return `$${n.toFixed(2)}`
 }
 
 function firstOfMonth(offsetMonths = 0) {
@@ -16,6 +22,18 @@ function firstOfMonth(offsetMonths = 0) {
 
 function today() {
   return new Date().toISOString().split('T')[0]
+}
+
+function ExportButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="text-xs px-2.5 py-1.5 border border-gray-200 dark:border-gray-700 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 shrink-0"
+    >
+      ↓ Export PDF
+    </button>
+  )
 }
 
 // ── Revenue Summary ──────────────────────────────────────────────────────────
@@ -31,27 +49,72 @@ function RevenueReport() {
 
   const maxBar = Math.max(...(data?.byMonth.map((m) => m.invoiced) ?? [1]), 1)
 
+  function exportPdf() {
+    if (!data) return
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Revenue Summary', 14, 18)
+    doc.setFontSize(9)
+    doc.setTextColor(120)
+    doc.text(`Period: ${dateFrom} to ${dateTo}`, 14, 26)
+    doc.setTextColor(0)
+
+    autoTable(doc, {
+      startY: 32,
+      head: [['Metric', 'Amount']],
+      body: [
+        ['Total Invoiced', fc(data.totalInvoiced)],
+        ['Collected', fc(data.totalCollected)],
+        ['Outstanding', fc(data.totalOutstanding)],
+      ],
+      columnStyles: { 1: { halign: 'right' } },
+      styles: { fontSize: 10 },
+    })
+
+    const y1 = ((doc as any).lastAutoTable?.finalY ?? 60) + 10
+
+    doc.setFontSize(9)
+    doc.setTextColor(120)
+    doc.text(`${data.invoiceCount} invoices · ${data.paidCount} paid · ${data.outstandingCount} outstanding`, 14, y1)
+    doc.setTextColor(0)
+
+    if (data.byMonth.length > 0) {
+      autoTable(doc, {
+        startY: y1 + 8,
+        head: [['Month', 'Invoiced', 'Collected']],
+        body: data.byMonth.map((m) => [m.month, fc(m.invoiced), fc(m.collected)]),
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
+        styles: { fontSize: 9 },
+      })
+    }
+
+    doc.save(`revenue-summary-${dateFrom}-${dateTo}.pdf`)
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
-          />
+      <div className="flex flex-wrap gap-3 items-end justify-between">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
-          />
-        </div>
+        <ExportButton onClick={exportPdf} disabled={!data} />
       </div>
 
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
@@ -126,8 +189,34 @@ function OutstandingReport() {
   const invoices = data?.data ?? []
   const total = invoices.reduce((s, i) => s + i.balanceDue, 0)
 
+  function exportPdf() {
+    if (!invoices.length) return
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Outstanding Balances', 14, 18)
+    doc.setFontSize(9)
+    doc.setTextColor(120)
+    doc.text(`${invoices.length} invoices · Total outstanding: ${fc(total)}`, 14, 26)
+    doc.setTextColor(0)
+
+    autoTable(doc, {
+      startY: 32,
+      head: [['Invoice #', 'Patient', 'Date', 'Balance Due']],
+      body: invoices.map((inv) => [inv.invoiceNumber, inv.patientName, inv.invoiceDate, fc(inv.balanceDue)]),
+      columnStyles: { 3: { halign: 'right' } },
+      styles: { fontSize: 9 },
+    })
+
+    doc.save(`outstanding-balances-${today()}.pdf`)
+  }
+
   return (
     <div className="space-y-3">
+      {!isLoading && (
+        <div className="flex justify-end">
+          <ExportButton onClick={exportPdf} disabled={invoices.length === 0} />
+        </div>
+      )}
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
       {!isLoading && invoices.length === 0 && (
         <p className="text-sm text-gray-400">No outstanding invoices.</p>
@@ -183,27 +272,51 @@ function VisitsByDoctorReport() {
 
   const maxVal = Math.max(...(data?.map((r) => r.total) ?? [1]), 1)
 
+  function exportPdf() {
+    if (!data || !data.length) return
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Visits by Doctor', 14, 18)
+    doc.setFontSize(9)
+    doc.setTextColor(120)
+    doc.text(`Period: ${dateFrom} to ${dateTo}`, 14, 26)
+    doc.setTextColor(0)
+
+    autoTable(doc, {
+      startY: 32,
+      head: [['Doctor', 'Total', 'Completed', 'In Progress']],
+      body: data.map((r) => [r.doctorName, r.total, r.completed, r.inProgress]),
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
+      styles: { fontSize: 9 },
+    })
+
+    doc.save(`visits-by-doctor-${dateFrom}-${dateTo}.pdf`)
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
-          />
+      <div className="flex flex-wrap gap-3 items-end justify-between">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
+            />
+          </div>
         </div>
-        <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm"
-          />
-        </div>
+        <ExportButton onClick={exportPdf} disabled={!data || data.length === 0} />
       </div>
 
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
@@ -252,19 +365,79 @@ function DemographicsReport() {
     ? data.overallGender.male + data.overallGender.female + data.overallGender.other + data.overallGender.unknown
     : 0
 
+  function exportPdf() {
+    if (!data || totalVisits === 0) return
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Patient Demographics', 14, 18)
+    doc.setFontSize(9)
+    doc.setTextColor(120)
+    doc.text(`Period: ${dateFrom} to ${dateTo} · ${totalVisits} visits`, 14, 26)
+    doc.setTextColor(0)
+
+    autoTable(doc, {
+      startY: 32,
+      head: [['Gender', 'Count', '%']],
+      body: [
+        ['Male', data.overallGender.male, pct(data.overallGender.male, totalVisits)],
+        ['Female', data.overallGender.female, pct(data.overallGender.female, totalVisits)],
+        ['Other', data.overallGender.other, pct(data.overallGender.other, totalVisits)],
+        ['Unknown', data.overallGender.unknown, pct(data.overallGender.unknown, totalVisits)],
+      ],
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
+      styles: { fontSize: 9 },
+    })
+
+    const y1 = ((doc as any).lastAutoTable?.finalY ?? 70) + 10
+
+    autoTable(doc, {
+      startY: y1,
+      head: [['Age Group', 'Count', '%']],
+      body: [
+        ['Under 18', data.overallAgeGroups.under18, pct(data.overallAgeGroups.under18, totalVisits)],
+        ['18–35', data.overallAgeGroups.age18to35, pct(data.overallAgeGroups.age18to35, totalVisits)],
+        ['36–50', data.overallAgeGroups.age36to50, pct(data.overallAgeGroups.age36to50, totalVisits)],
+        ['51–65', data.overallAgeGroups.age51to65, pct(data.overallAgeGroups.age51to65, totalVisits)],
+        ['Over 65', data.overallAgeGroups.over65, pct(data.overallAgeGroups.over65, totalVisits)],
+      ].filter(([, v]) => (v as number) > 0),
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
+      styles: { fontSize: 9 },
+    })
+
+    if (data.byDoctor.length > 1) {
+      const y2 = ((doc as any).lastAutoTable?.finalY ?? 120) + 10
+      autoTable(doc, {
+        startY: y2,
+        head: [['Doctor', 'Total', 'Male', 'Female', '<18', '18–35', '36–50', '51–65', '65+']],
+        body: data.byDoctor.map((r) => [
+          r.doctorName, r.total, r.gender.male, r.gender.female,
+          r.ageGroups.under18, r.ageGroups.age18to35, r.ageGroups.age36to50,
+          r.ageGroups.age51to65, r.ageGroups.over65,
+        ]),
+        columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' }, 7: { halign: 'right' }, 8: { halign: 'right' } },
+        styles: { fontSize: 8 },
+      })
+    }
+
+    doc.save(`patient-demographics-${dateFrom}-${dateTo}.pdf`)
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-3 items-end">
-        <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm" />
+      <div className="flex flex-wrap gap-3 items-end justify-between">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">From</label>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm" />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+              className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm" />
+          </div>
         </div>
-        <div>
-          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">To</label>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
-            className="rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm" />
-        </div>
+        <ExportButton onClick={exportPdf} disabled={!data || totalVisits === 0} />
       </div>
 
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
@@ -376,8 +549,39 @@ function LowStockReport() {
 
   const items = data?.data ?? []
 
+  function exportPdf() {
+    if (!items.length) return
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Low Stock Alert', 14, 18)
+    doc.setFontSize(9)
+    doc.setTextColor(120)
+    doc.text(`${items.length} items below reorder level · ${today()}`, 14, 26)
+    doc.setTextColor(0)
+
+    autoTable(doc, {
+      startY: 32,
+      head: [['Item', 'Category', 'On Hand', 'Reorder Level']],
+      body: items.map((item) => [
+        item.name,
+        item.category,
+        `${item.quantityOnHand} ${item.unit}`,
+        `${item.reorderLevel} ${item.unit}`,
+      ]),
+      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } },
+      styles: { fontSize: 9 },
+    })
+
+    doc.save(`low-stock-${today()}.pdf`)
+  }
+
   return (
     <div className="space-y-3">
+      {!isLoading && (
+        <div className="flex justify-end">
+          <ExportButton onClick={exportPdf} disabled={items.length === 0} />
+        </div>
+      )}
       {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
       {!isLoading && items.length === 0 && (
         <p className="text-sm text-green-600 dark:text-green-400">All stock levels are healthy.</p>

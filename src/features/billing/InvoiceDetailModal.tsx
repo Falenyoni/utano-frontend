@@ -1,7 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { useInvoice, useAddLineItem, useRemoveLineItem, useIssueInvoice, useVoidInvoice, useRecordPayment, useCreatePaymentPlan } from './useBilling'
 import type { InstallmentRow } from './billingApi'
+import { getPractice } from '@/features/settings/practiceApi'
 
 const PAYMENT_METHODS = ['Cash', 'EcoCash', 'ZIPIT', 'ZimSwitch', 'Card', 'MedicalAid', 'BankTransfer']
 const LINE_ITEM_TYPES = ['Consultation', 'Medication', 'Procedure', 'Laboratory', 'Other']
@@ -42,6 +46,7 @@ interface Props {
 
 export function InvoiceDetailModal({ invoiceId, onClose }: Props) {
   const { data: invoice, isLoading } = useInvoice(invoiceId)
+  const { data: practice } = useQuery({ queryKey: ['practice'], queryFn: getPractice })
 
   const addLineItem = useAddLineItem(invoiceId)
   const removeLineItem = useRemoveLineItem(invoiceId)
@@ -73,6 +78,164 @@ export function InvoiceDetailModal({ invoiceId, onClose }: Props) {
   const [planNotes, setPlanNotes] = useState('')
   const [planError, setPlanError] = useState('')
   const [planPreview, setPlanPreview] = useState<{ perInstallment: number } | null>(null)
+
+  async function handleDownloadPdf() {
+    if (!invoice) return
+    const fv = (n: number) => `$${n.toFixed(2)}`
+    const doc = new jsPDF()
+    const pageW = doc.internal.pageSize.getWidth()
+
+    // ── Practice header ────────────────────────────────────────────────────
+    let headerBottom = 14
+    const practiceData = practice ?? await getPractice().catch(() => null)
+
+    if (practiceData?.logoBase64) {
+      try {
+        doc.addImage(practiceData.logoBase64, 14, 10, 40, 16)
+        headerBottom = 30
+      } catch { /* continue without logo */ }
+    }
+
+    if (practiceData) {
+      const rightX = pageW - 14
+      doc.setFontSize(12)
+      doc.setFont('helvetica', 'bold')
+      doc.text(practiceData.name, rightX, 14, { align: 'right' })
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(100)
+      let infoY = 20
+      doc.text(practiceData.physicalAddress.replace(/\n/g, ', '), rightX, infoY, { align: 'right' })
+      infoY += 5
+      doc.text(`${practiceData.contactPhone}  ·  ${practiceData.contactEmail}`, rightX, infoY, { align: 'right' })
+      if (practiceData.adhozNumber || practiceData.bpNumber) {
+        infoY += 5
+        const regLine = [
+          practiceData.adhozNumber ? `Adhoz: ${practiceData.adhozNumber}` : null,
+          practiceData.bpNumber ? `BP: ${practiceData.bpNumber}` : null,
+        ].filter(Boolean).join('  ·  ')
+        doc.text(regLine, rightX, infoY, { align: 'right' })
+      }
+      headerBottom = Math.max(headerBottom, infoY + 4)
+      doc.setTextColor(0)
+    }
+
+    // ── Divider ────────────────────────────────────────────────────────────
+    doc.setDrawColor(200)
+    doc.line(14, headerBottom + 2, pageW - 14, headerBottom + 2)
+
+    // ── Invoice meta ───────────────────────────────────────────────────────
+    const metaY = headerBottom + 10
+    doc.setFontSize(18)
+    doc.setFont('helvetica', 'bold')
+    doc.text('INVOICE', 14, metaY)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(80)
+    doc.text(`Status: ${invoice.status}`, 14, metaY + 7)
+    doc.setTextColor(0)
+    doc.setFontSize(10)
+    doc.text(invoice.invoiceNumber, pageW - 14, metaY, { align: 'right' })
+    doc.setFontSize(9)
+    doc.setTextColor(80)
+    doc.text(`Date: ${invoice.invoiceDate}`, pageW - 14, metaY + 7, { align: 'right' })
+    if (invoice.dueDate) doc.text(`Due: ${new Date(invoice.dueDate).toLocaleDateString()}`, pageW - 14, metaY + 13, { align: 'right' })
+    doc.setTextColor(0)
+
+    const billY = metaY + 20
+    doc.setFontSize(9)
+    doc.setTextColor(100)
+    doc.text('BILLED TO', 14, billY)
+    doc.setTextColor(0)
+    doc.setFontSize(10)
+    doc.text(invoice.patientName, 14, billY + 6)
+    if (invoice.doctorName) {
+      doc.setFontSize(9)
+      doc.setTextColor(100)
+      doc.text(`Doctor: ${invoice.doctorName}`, 14, billY + 13)
+      doc.setTextColor(0)
+    }
+
+    // ── Line items + totals in one table (foot rows align with Amount column) ──
+    const tableY = billY + (invoice.doctorName ? 20 : 14)
+
+    const vatRate = invoice.subTotal > 0 ? Math.round((invoice.taxAmount / invoice.subTotal) * 100) : 0
+    const vatLabel = `VAT (${vatRate}%)`
+
+    // Each foot row: 6 cells — first 4 empty, label in col 4, value in col 5
+    type FootMeta = { label: string; value: string; kind: 'normal' | 'total' | 'balance' }
+    const footMeta: FootMeta[] = [
+      { label: 'Subtotal', value: fv(invoice.subTotal), kind: 'normal' },
+    ]
+    if (invoice.discountAmount > 0) footMeta.push({ label: 'Discount', value: `-${fv(invoice.discountAmount)}`, kind: 'normal' })
+    footMeta.push({ label: vatLabel, value: fv(invoice.taxAmount), kind: 'normal' })
+    footMeta.push({ label: 'Total', value: fv(invoice.totalAmount), kind: 'total' })
+    footMeta.push({ label: 'Paid', value: fv(invoice.amountPaid), kind: 'normal' })
+    footMeta.push({ label: 'Balance Due', value: fv(invoice.balanceDue), kind: 'balance' })
+
+    const foot = footMeta.map(r => ['', '', '', '', r.label, r.value])
+
+    autoTable(doc, {
+      startY: tableY,
+      head: [['Description', 'Type', 'Qty', 'Unit Price', 'Disc%', 'Amount']],
+      body: invoice.lineItems.map((li) => [
+        li.description, li.type, li.quantity,
+        fv(li.unitPrice), li.discountPercent > 0 ? `${li.discountPercent}%` : '—', fv(li.amount),
+      ]),
+      foot,
+      showFoot: 'lastPage',
+      headStyles: { fillColor: [30, 41, 59] },
+      footStyles: { fillColor: [255, 255, 255], textColor: [80, 80, 80], fontSize: 9 },
+      columnStyles: {
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+      },
+      styles: { fontSize: 9 },
+      didParseCell: (data) => {
+        if (data.section !== 'foot') return
+        const row = footMeta[data.row.index]
+        if (!row) return
+        if (row.kind === 'total') {
+          data.cell.styles.fontStyle = 'bold'
+          data.cell.styles.fontSize = 10
+          // top border drawn in willDrawCell
+        }
+        if (row.kind === 'balance') {
+          data.cell.styles.fontStyle = 'bold'
+          data.cell.styles.fontSize = 10
+          data.cell.styles.textColor = invoice.balanceDue > 0 ? [180, 30, 30] : [34, 139, 34]
+        }
+      },
+      willDrawCell: (data) => {
+        if (data.section !== 'foot') return
+        const row = footMeta[data.row.index]
+        if (row?.kind === 'total' && (data.column.index === 4 || data.column.index === 5)) {
+          doc.setDrawColor(180, 180, 180)
+          doc.setLineWidth(0.3)
+          doc.line(data.cell.x, data.cell.y, data.cell.x + data.cell.width, data.cell.y)
+        }
+      },
+    })
+
+    // ── Payments ───────────────────────────────────────────────────────────
+    if (invoice.payments.length > 0) {
+      const afterTable = ((doc as any).lastAutoTable?.finalY ?? 150) + 8
+      autoTable(doc, {
+        startY: afterTable,
+        head: [['Payment Date', 'Method', 'Amount', 'Reference']],
+        body: invoice.payments.map((p) => [
+          new Date(p.paymentDate).toLocaleDateString(), p.method, fv(p.amount), p.reference ?? '—',
+        ]),
+        headStyles: { fillColor: [30, 41, 59] },
+        columnStyles: { 2: { halign: 'right' } },
+        styles: { fontSize: 9 },
+      })
+    }
+
+    doc.save(`${invoice.invoiceNumber}.pdf`)
+  }
 
   function handleAddLine(e: React.FormEvent) {
     e.preventDefault()
@@ -164,6 +327,12 @@ export function InvoiceDetailModal({ invoiceId, onClose }: Props) {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleDownloadPdf}
+                    className="text-sm px-3 py-2 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  >
+                    ↓ PDF
+                  </button>
                   {canEdit && (
                     <button onClick={() => issueInvoice.mutate(invoice.id)}
                       disabled={issueInvoice.isPending || invoice.lineItems.length === 0}

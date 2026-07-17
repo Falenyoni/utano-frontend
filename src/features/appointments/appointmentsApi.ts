@@ -109,6 +109,34 @@ export async function cancelAppointment(id: string, reason: string): Promise<voi
   if (!res.ok) throw new Error('Failed to cancel appointment')
 }
 
+export interface ImportAppointmentRow {
+  patientName: string
+  doctorName: string
+  appointmentDate: string
+  startTime: string
+  endTime: string
+  type: string
+  notes?: string
+}
+
+export interface BulkImportResult {
+  imported: number
+  failed: number
+  errors: string[]
+}
+
+export async function bulkImportAppointments(rows: ImportAppointmentRow[]): Promise<BulkImportResult> {
+  const res = await apiFetch('/api/appointments/import', {
+    method: 'POST',
+    body: JSON.stringify({ rows }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => null)
+    throw new Error(err?.detail ?? 'Import failed')
+  }
+  return res.json()
+}
+
 export async function rescheduleAppointment(
   id: string,
   newDate: string,
