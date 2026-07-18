@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router'
 import { useAuth } from '@/shared/lib/auth/AuthContext'
+import { NotificationBell } from '@/features/notifications/NotificationBell'
 
 interface NavbarProps {
   onMenuClick: () => void
@@ -34,6 +35,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         </button>
       </div>
       <div className="flex items-center gap-3">
+        <NotificationBell />
         <div className="hidden sm:block text-right">
           <p className="text-sm font-medium text-gray-800 dark:text-gray-200 leading-tight">{user?.fullName}</p>
           {user && user.roles.length > 0 && (

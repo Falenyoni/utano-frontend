@@ -3,7 +3,10 @@ import { useParams, useNavigate } from 'react-router'
 import { useVisit, useTriageVisit, useUpdateVisit, useCompleteVisit } from './useVisits'
 import { usePrescriptions, useAddPrescription, useRemovePrescription } from './usePrescriptions'
 import { useStockItems } from '@/features/inventory/useInventory'
-import type { TriageVisitRequest, UpdateVisitRequest } from './visitsApi'
+import { useDoctors } from '@/features/appointments/useAppointments'
+import { useAuth } from '@/shared/lib/auth/AuthContext'
+import { useCreateNotification } from '@/features/notifications/useNotifications'
+import type { TriageVisitRequest, UpdateVisitRequest, VisitDetail } from './visitsApi'
 import type { PrescriptionRow } from './prescriptionsApi'
 import type { StockItemSummary } from '@/features/inventory/inventoryApi'
 
@@ -36,6 +39,229 @@ function ModalBackdrop({ onClose, children }: { onClose: () => void; children: R
         {children}
       </div>
     </div>
+  )
+}
+
+function ReferModal({ visit, onClose }: { visit: VisitDetail; onClose: () => void }) {
+  const { data: doctorsData } = useDoctors()
+  const createNotification = useCreateNotification()
+  const [isExternal, setIsExternal] = useState(false)
+  const [doctorId, setDoctorId] = useState('')
+  const [extName, setExtName] = useState('')
+  const [extEmail, setExtEmail] = useState('')
+  const [extraNotes, setExtraNotes] = useState('')
+  const [sent, setSent] = useState(false)
+  const [sendError, setSendError] = useState('')
+
+  const internalDoctor = doctorsData?.find((d) => d.id === doctorId)
+  const recipientName  = isExternal ? extName.trim()  : (internalDoctor?.fullName ?? '')
+  const recipientEmail = isExternal ? extEmail.trim() : (internalDoctor?.email ?? '')
+  const canSend = isExternal
+    ? recipientName.length > 0 && recipientEmail.length > 0
+    : doctorId.length > 0
+
+  function buildReferralBody() {
+    const lines = [
+      `Dear ${recipientName || 'Doctor'},`,
+      '',
+      'I am referring the following patient to your care:',
+      '',
+      `Patient: ${visit.patientName}`,
+      `Date of Visit: ${visit.visitDate}`,
+      `Referring Doctor: ${visit.doctorName}`,
+      visit.department ? `Department: ${visit.department}` : null,
+      '',
+      visit.chiefComplaint ? `Chief Complaint: ${visit.chiefComplaint}` : null,
+      visit.symptoms       ? `Symptoms: ${visit.symptoms}` : null,
+      visit.diagnosis      ? `Diagnosis: ${visit.diagnosis}` : null,
+      visit.treatment      ? `Treatment Given: ${visit.treatment}` : null,
+      visit.prescription   ? `Prescription Notes: ${visit.prescription}` : null,
+      visit.notes          ? `Clinical Notes: ${visit.notes}` : null,
+      extraNotes.trim()    ? `\nAdditional Notes:\n${extraNotes.trim()}` : null,
+      '',
+      'Please do not hesitate to contact me should you require further information.',
+      '',
+      'Kind regards,',
+      visit.doctorName,
+    ]
+    return lines.filter((l) => l !== null).join('\n')
+  }
+
+  async function handleSend() {
+    if (!canSend) return
+    setSendError('')
+
+    if (!isExternal && internalDoctor) {
+      try {
+        const diagnosis = visit.diagnosis
+          ? `Diagnosis: ${visit.diagnosis}.`
+          : 'Please review the patient notes.'
+        const message = `${visit.doctorName} referred ${visit.patientName} to you. ${diagnosis}${extraNotes.trim() ? ` Notes: ${extraNotes.trim()}` : ''}`
+        await createNotification.mutateAsync({
+          recipientUserId: internalDoctor.id,
+          title: `Patient Referral – ${visit.patientName}`,
+          message,
+          type: 'Referral',
+          referenceId: visit.id,
+        })
+        setSent(true)
+      } catch (err) {
+        setSendError(err instanceof Error ? err.message : 'Failed to send referral. Please try again.')
+      }
+    } else {
+      const subject = encodeURIComponent(`Patient Referral – ${visit.patientName}`)
+      const body    = encodeURIComponent(buildReferralBody())
+      window.open(`mailto:${recipientEmail}?subject=${subject}&body=${body}`, '_blank')
+      onClose()
+    }
+  }
+
+  if (sent) {
+    return (
+      <ModalBackdrop onClose={onClose}>
+        <div className="text-center py-6 space-y-3">
+          <div className="text-4xl">✅</div>
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Referral Sent</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {recipientName} has been notified about{' '}
+            <span className="font-medium text-gray-700 dark:text-gray-300">{visit.patientName}</span>.
+          </p>
+          <button
+            onClick={onClose}
+            className="mt-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md px-5 py-2 text-sm font-medium"
+          >
+            Done
+          </button>
+        </div>
+      </ModalBackdrop>
+    )
+  }
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Refer Patient</h3>
+      <p className="text-xs text-gray-500 dark:text-gray-400">
+        Referring <span className="font-medium text-gray-700 dark:text-gray-300">{visit.patientName}</span>.
+        {isExternal
+          ? ' An email will open pre-filled with the patient\'s diagnosis and history.'
+          : ' The selected doctor will receive an in-app notification.'}
+      </p>
+
+      <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden text-xs w-fit">
+        <button
+          type="button"
+          onClick={() => setIsExternal(false)}
+          className={`px-3 py-1.5 font-medium transition-colors ${
+            !isExternal ? 'bg-purple-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+          }`}
+        >
+          Within Practice
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsExternal(true)}
+          className={`px-3 py-1.5 font-medium border-l border-gray-300 dark:border-gray-700 transition-colors ${
+            isExternal ? 'bg-purple-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+          }`}
+        >
+          External Doctor
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {!isExternal ? (
+          <div>
+            <label className={labelClass}>Refer to Doctor</label>
+            <select value={doctorId} onChange={(e) => setDoctorId(e.target.value)} className={inputClass}>
+              <option value="">— Select a doctor —</option>
+              {doctorsData?.map((d) => (
+                <option key={d.id} value={d.id}>{d.fullName}</option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>Doctor's Name</label>
+              <input value={extName} onChange={(e) => setExtName(e.target.value)}
+                placeholder="Dr. Jane Smith" className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>Doctor's Email</label>
+              <input type="email" value={extEmail} onChange={(e) => setExtEmail(e.target.value)}
+                placeholder="doctor@hospital.co.zw" className={inputClass} />
+            </div>
+          </div>
+        )}
+
+        <div>
+          <label className={labelClass}>Additional Notes (optional)</label>
+          <textarea rows={3} value={extraNotes} onChange={(e) => setExtraNotes(e.target.value)}
+            placeholder="Any extra context for the receiving doctor..."
+            className={textareaClass} />
+        </div>
+
+        {isExternal && canSend && (
+          <div className="rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-3">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">Referral preview</p>
+            <pre className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-sans leading-relaxed max-h-40 overflow-y-auto">
+              {buildReferralBody()}
+            </pre>
+          </div>
+        )}
+      </div>
+
+      {sendError && (
+        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 rounded-md px-3 py-2">
+          {sendError}
+        </p>
+      )}
+
+      <div className="flex gap-3 pt-1">
+        <button
+          onClick={handleSend}
+          disabled={!canSend || createNotification.isPending}
+          className="bg-purple-600 hover:bg-purple-700 text-white rounded-md px-4 py-2 text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {createNotification.isPending
+            ? 'Sending...'
+            : isExternal ? 'Open Email Client' : 'Send Referral'}
+        </button>
+        <button onClick={onClose}
+          className="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+          Cancel
+        </button>
+      </div>
+    </ModalBackdrop>
+  )
+}
+
+function FilesSection() {
+  return (
+    <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Documents & Files</h3>
+          <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 font-medium">
+            Coming Soon
+          </span>
+        </div>
+      </div>
+
+      <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center opacity-50 cursor-not-allowed select-none">
+        <div className="text-3xl mb-2">📎</div>
+        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Attach documents to this visit</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Lab results, referral letters, scans, PDFs</p>
+        <button
+          disabled
+          className="mt-3 text-xs border border-gray-300 dark:border-gray-700 text-gray-400 dark:text-gray-500 rounded-md px-3 py-1.5 cursor-not-allowed"
+        >
+          Upload File
+        </button>
+      </div>
+
+      <p className="text-xs text-gray-400 dark:text-gray-500">No documents attached to this visit.</p>
+    </section>
   )
 }
 
@@ -208,10 +434,15 @@ function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCom
 export function VisitDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { hasAnyRole } = useAuth()
   const { data: visit, isLoading, error } = useVisit(id!)
   const triageVisit = useTriageVisit()
   const updateVisit = useUpdateVisit()
   const completeVisit = useCompleteVisit()
+
+  const [showRefer, setShowRefer] = useState(false)
+
+  const canReferOrViewHistory = hasAnyRole('Doctor', 'Nurse', 'Admin')
 
   const [editingTriage, setEditingTriage] = useState(false)
   const [triageForm, setTriageForm] = useState<TriageVisitRequest>({
@@ -285,8 +516,10 @@ export function VisitDetailPage() {
 
   return (
     <div className="max-w-2xl space-y-6">
+      {showRefer && <ReferModal visit={visit} onClose={() => setShowRefer(false)} />}
+
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{visit.patientName}</h2>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -297,9 +530,25 @@ export function VisitDetailPage() {
               {visit.status === 'InProgress' ? 'In Progress' : visit.status}
             </span>
           </div>
+          {canReferOrViewHistory && (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <button
+                onClick={() => navigate(`/patients/${visit.patientId}/visits`)}
+                className="text-xs border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-md px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium"
+              >
+                Patient History
+              </button>
+              <button
+                onClick={() => setShowRefer(true)}
+                className="text-xs border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 rounded-md px-3 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-950 font-medium"
+              >
+                Refer Patient
+              </button>
+            </div>
+          )}
         </div>
         <button onClick={() => navigate('/consultations')}
-          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+          className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 shrink-0 mt-1">
           ← Back
         </button>
       </div>
@@ -453,6 +702,9 @@ export function VisitDetailPage() {
 
       {/* Prescriptions */}
       <PrescriptionsSection visitId={id!} isCompleted={isCompleted} />
+
+      {/* Documents & Files (coming soon) */}
+      <FilesSection />
 
       {/* Complete Visit */}
       {!isCompleted && !editingTriage && !editingNotes && (
