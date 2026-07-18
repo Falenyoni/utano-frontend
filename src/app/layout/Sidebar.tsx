@@ -64,7 +64,7 @@ function NavContent({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
         </div>
       </div>
 
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 min-h-0 px-2 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -117,7 +117,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       {open && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="absolute inset-0 bg-black/50" onClick={onClose} aria-hidden="true" />
-          <aside className="relative w-64 flex flex-col bg-white dark:bg-gray-900 h-screen shadow-xl overflow-hidden">
+          <aside className="relative w-64 flex flex-col bg-white dark:bg-gray-900 h-dvh shadow-xl overflow-hidden">
             <NavContent user={user} />
           </aside>
         </div>

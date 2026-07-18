@@ -162,6 +162,11 @@ export function DayGridView({ appointments, doctors, today, nowTime, date, onAct
             : resolvedAppts.filter((a) => a.doctorId === doc.id)
           const isBookable = doc.id !== '__unassigned__' && !!onSlotClick
           const isHovered = hoverInfo?.docId === doc.id
+          const isOnToday = date === today
+
+          function slotIsPast(startTime: string) {
+            return isOnToday && startTime <= nowTime
+          }
 
           return (
             <div
@@ -179,6 +184,7 @@ export function DayGridView({ appointments, doctors, today, nowTime, date, onAct
                 const rect = e.currentTarget.getBoundingClientRect()
                 const y = e.clientY - rect.top
                 const { startTime, endTime } = snapTime(Math.max(0, y))
+                if (slotIsPast(startTime)) return
                 onSlotClick!(doc.id, doc.name, date, startTime, endTime)
               } : undefined}
             >
@@ -195,17 +201,32 @@ export function DayGridView({ appointments, doctors, today, nowTime, date, onAct
                 />
               ))}
 
-              {/* Hover ghost block */}
-              {isHovered && hoverInfo && (
+              {/* Past-time dim overlay — only on today's columns */}
+              {isOnToday && nowTop > 0 && (
                 <div
-                  className="absolute left-1 right-1 rounded border-2 border-dashed border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-950 opacity-80 pointer-events-none flex items-center justify-center"
-                  style={{ top: hoverInfo.snappedY + 1, height: SLOT_PX * 2 - 2 }}
-                >
-                  <span className="text-[11px] font-medium text-blue-600 dark:text-blue-300">
-                    + {hoverInfo.startTime}
-                  </span>
-                </div>
+                  className="absolute left-0 right-0 top-0 pointer-events-none bg-gray-400 dark:bg-gray-600 opacity-10"
+                  style={{ height: Math.min(nowTop, TOTAL_H) }}
+                />
               )}
+
+              {/* Hover ghost block */}
+              {isHovered && hoverInfo && (() => {
+                const past = slotIsPast(hoverInfo.startTime)
+                return (
+                  <div
+                    className={`absolute left-1 right-1 rounded border-2 border-dashed pointer-events-none flex items-center justify-center ${
+                      past
+                        ? 'border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 opacity-60'
+                        : 'border-blue-400 dark:border-blue-500 bg-blue-50 dark:bg-blue-950 opacity-80'
+                    }`}
+                    style={{ top: hoverInfo.snappedY + 1, height: SLOT_PX * 2 - 2 }}
+                  >
+                    <span className={`text-[11px] font-medium ${past ? 'text-gray-400 dark:text-gray-500' : 'text-blue-600 dark:text-blue-300'}`}>
+                      {past ? hoverInfo.startTime : `+ ${hoverInfo.startTime}`}
+                    </span>
+                  </div>
+                )
+              })()}
 
               {/* Appointment blocks */}
               {colAppts.map((appt) => {

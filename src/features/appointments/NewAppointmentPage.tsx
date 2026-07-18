@@ -17,6 +17,11 @@ function todayISO() {
   return new Date().toISOString().split('T')[0]
 }
 
+function nowHHMM() {
+  const now = new Date()
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+}
+
 const inputClass =
   'w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm'
 
@@ -73,6 +78,11 @@ export function NewAppointmentPage() {
     const endTime = manualMode ? `${manualEnd}:00` : selectedSlot ? `${selectedSlot.endTime}:00` : null
 
     if (!startTime || !endTime) return setError('Please select a time slot.')
+
+    const effectiveStart = manualMode ? manualStart : selectedSlot?.startTime ?? ''
+    if (date === todayISO() && effectiveStart <= nowHHMM()) {
+      return setError('Cannot book an appointment at a time that has already passed.')
+    }
 
     bookMutation.mutate(
       {
@@ -225,15 +235,18 @@ export function NewAppointmentPage() {
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
                   {slots.map((slot) => {
                     const isSelected = selectedSlot?.startTime === slot.startTime
+                    const isPast = date === todayISO() && slot.startTime <= nowHHMM()
+                    const unavailable = !slot.isAvailable || isPast
                     return (
                       <button
                         key={slot.startTime}
                         type="button"
-                        disabled={!slot.isAvailable}
+                        disabled={unavailable}
                         onClick={() => setSelectedSlot({ startTime: slot.startTime, endTime: slot.endTime })}
+                        title={isPast ? 'This time has already passed' : undefined}
                         className={[
                           'px-2 py-1.5 rounded text-xs font-medium border transition-colors',
-                          !slot.isAvailable
+                          unavailable
                             ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-700 cursor-not-allowed line-through'
                             : isSelected
                             ? 'bg-blue-600 text-white border-blue-600'
