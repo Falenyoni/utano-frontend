@@ -137,6 +137,21 @@ export async function bulkImportAppointments(rows: ImportAppointmentRow[]): Prom
   return res.json()
 }
 
+export async function reassignAppointment(
+  id: string,
+  newDoctorId: string,
+  newDoctorName: string,
+): Promise<void> {
+  const res = await apiFetch(`/api/appointments/${id}/reassign`, {
+    method: 'PUT',
+    body: JSON.stringify({ newDoctorId, newDoctorName }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => null)
+    throw new Error(err?.detail ?? 'Failed to reassign appointment')
+  }
+}
+
 export async function rescheduleAppointment(
   id: string,
   newDate: string,

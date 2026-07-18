@@ -6,6 +6,7 @@ import {
   cancelAppointment,
   checkInAppointment,
   rescheduleAppointment,
+  reassignAppointment,
   type GetAppointmentsParams,
   type BookAppointmentRequest,
 } from './appointmentsApi'
@@ -46,6 +47,15 @@ export function useCancelAppointment() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) =>
       cancelAppointment(id, reason),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
+  })
+}
+
+export function useReassignAppointment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, newDoctorId, newDoctorName }: { id: string; newDoctorId: string; newDoctorName: string }) =>
+      reassignAppointment(id, newDoctorId, newDoctorName),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
   })
 }

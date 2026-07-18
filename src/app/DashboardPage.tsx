@@ -106,12 +106,26 @@ export function DashboardPage() {
       color: STATUS_COLORS[s],
     }))
 
-  // Overdue: scheduled/confirmed appointments whose start time has passed
+  // Overdue: today's appointments past end time, not yet closed
   const nowStr = currentTimeStr()
   const overdueCount = (todayAppts?.data ?? []).filter(
-    (a) => (a.status === 'Scheduled' || a.status === 'Confirmed') && a.startTime < nowStr,
+    (a) =>
+      ['Scheduled', 'Confirmed', 'CheckedIn'].includes(a.status) &&
+      a.endTime.slice(0, 8) < nowStr,
   ).length
   const noShowCount = statusCounts['NoShow'] ?? 0
+
+  // Doctor workload from today's appointments
+  const doctorMap = new Map<string, { name: string; total: number; completed: number; inProgress: number; overdue: number }>()
+  for (const appt of todayAppts?.data ?? []) {
+    const entry = doctorMap.get(appt.doctorId) ?? { name: appt.doctorName, total: 0, completed: 0, inProgress: 0, overdue: 0 }
+    entry.total++
+    if (appt.status === 'Completed') entry.completed++
+    if (appt.status === 'InProgress') entry.inProgress++
+    if (['Scheduled', 'Confirmed', 'CheckedIn'].includes(appt.status) && appt.endTime.slice(0, 8) < nowStr) entry.overdue++
+    doctorMap.set(appt.doctorId, entry)
+  }
+  const doctorStats = Array.from(doctorMap.values()).sort((a, b) => b.total - a.total)
 
   return (
     <div className="space-y-6">
@@ -221,6 +235,44 @@ export function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Doctor workload today */}
+      {doctorStats.length > 0 && (
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Doctor Workload Today</h3>
+            <Link to="/appointments" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">View appointments</Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {doctorStats.map((doc) => {
+              const pct = doc.total > 0 ? Math.round((doc.completed / doc.total) * 100) : 0
+              const remaining = doc.total - doc.completed
+              return (
+                <div key={doc.name} className="rounded-lg border border-gray-100 dark:border-gray-800 p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{doc.name}</p>
+                    {doc.overdue > 0 && (
+                      <span className="text-xs px-1.5 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 font-medium whitespace-nowrap">
+                        {doc.overdue} overdue
+                      </span>
+                    )}
+                  </div>
+                  <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 font-variant-numeric tabular-nums">
+                    <span>{doc.completed} done · {doc.inProgress > 0 ? `${doc.inProgress} in progress · ` : ''}{remaining - doc.inProgress} waiting</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{doc.total} total</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

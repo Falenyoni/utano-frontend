@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useLocation } from 'react-router'
 import { useBookAppointment, useDoctors } from './useAppointments'
+import { useAvailableSlots } from './useScheduling'
 import { usePatients } from '@/features/patients/usePatients'
 
 const APPOINTMENT_TYPES = [
@@ -16,8 +17,17 @@ function todayISO() {
   return new Date().toISOString().split('T')[0]
 }
 
+const inputClass =
+  'w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm'
+
 export function NewAppointmentPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const prefill = location.state as {
+    doctorId?: string; doctorName?: string
+    date?: string; startTime?: string; endTime?: string
+  } | null
+
   const bookMutation = useBookAppointment()
   const { data: doctorsData, isLoading: loadingDoctors } = useDoctors()
 
@@ -28,13 +38,29 @@ export function NewAppointmentPage() {
   )
 
   const [selectedPatient, setSelectedPatient] = useState<{ id: string; name: string } | null>(null)
-  const [selectedDoctor, setSelectedDoctor] = useState<{ id: string; name: string } | null>(null)
-  const [date, setDate] = useState(todayISO())
-  const [startTime, setStartTime] = useState('08:00')
-  const [endTime, setEndTime] = useState('08:30')
+  const [selectedDoctor, setSelectedDoctor] = useState<{ id: string; name: string } | null>(
+    prefill?.doctorId && prefill?.doctorName
+      ? { id: prefill.doctorId, name: prefill.doctorName }
+      : null,
+  )
+  const [date, setDate] = useState(prefill?.date ?? todayISO())
   const [type, setType] = useState('Consultation')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  // Slot picker state — pre-fill from grid click if available
+  const [selectedSlot, setSelectedSlot] = useState<{ startTime: string; endTime: string } | null>(null)
+  const [manualMode, setManualMode] = useState(!!(prefill?.startTime))
+  const [manualStart, setManualStart] = useState(prefill?.startTime ?? '08:00')
+  const [manualEnd, setManualEnd] = useState(prefill?.endTime ?? '08:30')
+
+  const { data: slots, isLoading: loadingSlots } = useAvailableSlots(
+    selectedDoctor?.id ?? null,
+    date,
+  )
+
+  const hasSchedule = slots !== undefined
+  const noSchedule = hasSchedule && slots.length === 0
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -43,6 +69,11 @@ export function NewAppointmentPage() {
     if (!selectedPatient) return setError('Please select a patient.')
     if (!selectedDoctor) return setError('Please select a doctor.')
 
+    const startTime = manualMode ? `${manualStart}:00` : selectedSlot ? `${selectedSlot.startTime}:00` : null
+    const endTime = manualMode ? `${manualEnd}:00` : selectedSlot ? `${selectedSlot.endTime}:00` : null
+
+    if (!startTime || !endTime) return setError('Please select a time slot.')
+
     bookMutation.mutate(
       {
         patientId: selectedPatient.id,
@@ -50,8 +81,8 @@ export function NewAppointmentPage() {
         doctorId: selectedDoctor.id,
         doctorName: selectedDoctor.name,
         appointmentDate: date,
-        startTime: `${startTime}:00`,
-        endTime: `${endTime}:00`,
+        startTime,
+        endTime,
         type,
         notes: notes || null,
       },
@@ -62,6 +93,18 @@ export function NewAppointmentPage() {
     )
   }
 
+  // Reset slot when doctor or date changes
+  function handleDoctorChange(doctorId: string) {
+    const doc = doctorsData?.find((d) => d.id === doctorId)
+    setSelectedDoctor(doc ? { id: doc.id, name: doc.fullName } : null)
+    setSelectedSlot(null)
+  }
+
+  function handleDateChange(newDate: string) {
+    setDate(newDate)
+    setSelectedSlot(null)
+  }
+
   return (
     <div className="max-w-xl space-y-6">
       <div>
@@ -70,20 +113,14 @@ export function NewAppointmentPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Patient */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Patient
-          </label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Patient</label>
           {selectedPatient ? (
             <div className="flex items-center justify-between px-3 py-2 rounded-md border border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-950">
               <span className="text-sm text-gray-900 dark:text-gray-100">{selectedPatient.name}</span>
-              <button
-                type="button"
-                onClick={() => setSelectedPatient(null)}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                Change
-              </button>
+              <button type="button" onClick={() => setSelectedPatient(null)}
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Change</button>
             </div>
           ) : (
             <div className="space-y-1">
@@ -92,17 +129,14 @@ export function NewAppointmentPage() {
                 value={patientSearch}
                 onChange={(e) => setPatientSearch(e.target.value)}
                 placeholder="Search patient by name or ID..."
-                className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
+                className={inputClass}
               />
               {patientsData && patientsData.data.length > 0 && (
                 <div className="rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800 max-h-48 overflow-y-auto">
                   {patientsData.data.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
+                    <button key={p.id} type="button"
                       onClick={() => { setSelectedPatient({ id: p.id, name: p.fullName }); setPatientSearch('') }}
-                      className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    >
+                      className="w-full text-left px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800">
                       {p.fullName}
                       <span className="ml-2 text-xs text-gray-400">{p.nationalId}</span>
                     </button>
@@ -113,118 +147,133 @@ export function NewAppointmentPage() {
           )}
         </div>
 
+        {/* Doctor */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Doctor
-          </label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Doctor</label>
           {loadingDoctors ? (
             <p className="text-sm text-gray-400">Loading doctors...</p>
           ) : (
-            <select
-              value={selectedDoctor?.id ?? ''}
-              onChange={(e) => {
-                const doc = doctorsData?.find((d) => d.id === e.target.value)
-                setSelectedDoctor(doc ? { id: doc.id, name: doc.fullName } : null)
-              }}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-            >
+            <select value={selectedDoctor?.id ?? ''} onChange={(e) => handleDoctorChange(e.target.value)}
+              className={inputClass}>
               <option value="">Select a doctor</option>
               {doctorsData?.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.fullName}
-                </option>
+                <option key={d.id} value={d.id}>{d.fullName}</option>
               ))}
             </select>
           )}
         </div>
 
+        {/* Date + Type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Date
-            </label>
-            <input
-              type="date"
-              value={date}
-              min={todayISO()}
-              onChange={(e) => setDate(e.target.value)}
-              required
-              className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-            />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+            <input type="date" value={date} min={todayISO()}
+              onChange={(e) => handleDateChange(e.target.value)} required className={inputClass} />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Type
-            </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-            >
-              {APPOINTMENT_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+            <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass}>
+              {APPOINTMENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Start Time
-            </label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-              className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-            />
+        {/* Slot picker */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Time Slot</label>
+            {selectedDoctor && (
+              <button type="button" onClick={() => { setManualMode((m) => !m); setSelectedSlot(null) }}
+                className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                {manualMode ? 'Pick from schedule' : 'Enter manually'}
+              </button>
+            )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              End Time
-            </label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-              className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-            />
-          </div>
+
+          {!selectedDoctor && (
+            <p className="text-sm text-gray-400 dark:text-gray-500 italic">Select a doctor to see available slots.</p>
+          )}
+
+          {selectedDoctor && manualMode && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Start Time</label>
+                <input type="time" value={manualStart} onChange={(e) => setManualStart(e.target.value)}
+                  required className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">End Time</label>
+                <input type="time" value={manualEnd} onChange={(e) => setManualEnd(e.target.value)}
+                  required className={inputClass} />
+              </div>
+            </div>
+          )}
+
+          {selectedDoctor && !manualMode && (
+            <>
+              {loadingSlots && (
+                <p className="text-sm text-gray-400 dark:text-gray-500">Loading slots...</p>
+              )}
+              {noSchedule && (
+                <p className="text-sm text-gray-400 dark:text-gray-500 italic">
+                  No schedule configured for this doctor on {new Date(date + 'T00:00').toLocaleDateString('en-GB', { weekday: 'long' })}.
+                  <button type="button" onClick={() => setManualMode(true)}
+                    className="ml-1 text-blue-600 dark:text-blue-400 hover:underline">Enter time manually</button>
+                </p>
+              )}
+              {slots && slots.length > 0 && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                  {slots.map((slot) => {
+                    const isSelected = selectedSlot?.startTime === slot.startTime
+                    return (
+                      <button
+                        key={slot.startTime}
+                        type="button"
+                        disabled={!slot.isAvailable}
+                        onClick={() => setSelectedSlot({ startTime: slot.startTime, endTime: slot.endTime })}
+                        className={[
+                          'px-2 py-1.5 rounded text-xs font-medium border transition-colors',
+                          !slot.isAvailable
+                            ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 border-gray-200 dark:border-gray-700 cursor-not-allowed line-through'
+                            : isSelected
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950',
+                        ].join(' ')}
+                      >
+                        {slot.startTime}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {selectedSlot && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Selected: <span className="font-medium text-gray-800 dark:text-gray-200">{selectedSlot.startTime} – {selectedSlot.endTime}</span>
+                </p>
+              )}
+            </>
+          )}
         </div>
 
+        {/* Notes */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Notes (optional)
           </label>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={3}
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3}
             placeholder="Reason for visit, special instructions..."
-            className="w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-          />
+            className={inputClass} />
         </div>
 
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        )}
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
         <div className="flex flex-col-reverse sm:flex-row gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/appointments')}
-            className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800"
-          >
+          <button type="button" onClick={() => navigate('/appointments')}
+            className="w-full sm:w-auto px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={bookMutation.isPending}
-            className="w-full sm:w-auto px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button type="submit" disabled={bookMutation.isPending}
+            className="w-full sm:w-auto px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed">
             {bookMutation.isPending ? 'Booking...' : 'Book Appointment'}
           </button>
         </div>

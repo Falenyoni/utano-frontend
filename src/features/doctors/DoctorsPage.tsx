@@ -11,6 +11,7 @@ import {
   type UpdateUserRequest,
   type StaffUser,
 } from './usersApi'
+import { DoctorScheduleModal } from './DoctorScheduleModal'
 
 const ROLE_COLORS: Record<string, string> = {
   Doctor: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
@@ -137,6 +138,7 @@ export function DoctorsPage() {
   const [form, setForm] = useState<CreateUserRequest>(EMPTY_FORM)
   const [formError, setFormError] = useState<string | null>(null)
   const [editingUser, setEditingUser] = useState<StaffUser | null>(null)
+  const [schedulingDoctor, setSchedulingDoctor] = useState<StaffUser | null>(null)
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['users'],
@@ -236,6 +238,14 @@ export function DoctorsPage() {
                   <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{u.status}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-end gap-3">
+                      {u.role === 'Doctor' && (
+                        <button
+                          onClick={() => setSchedulingDoctor(u)}
+                          className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
+                        >
+                          Schedule
+                        </button>
+                      )}
                       <button
                         onClick={() => setEditingUser(u)}
                         className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
@@ -361,6 +371,14 @@ export function DoctorsPage() {
 
       {editingUser && (
         <EditStaffModal user={editingUser} onClose={() => setEditingUser(null)} />
+      )}
+
+      {schedulingDoctor && (
+        <DoctorScheduleModal
+          doctorId={schedulingDoctor.id}
+          doctorName={schedulingDoctor.fullName}
+          onClose={() => setSchedulingDoctor(null)}
+        />
       )}
     </div>
   )
