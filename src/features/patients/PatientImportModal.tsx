@@ -54,6 +54,7 @@ async function importPatient(row: Record<string, string>) {
     dateOfBirth: row.dateOfBirth,
     gender:     row.gender,
     nationalId: row.nationalId,
+    occupation: null,
     contacts: [{
       type:        'Mobile',
       phoneNumber: normalizePhone(row.phone),

@@ -49,7 +49,6 @@ export interface CreatePatientRequest {
     country: string
     isPrimary: boolean
   }>
-  occupation: string | null
   medicalAidId: string | null
   medicalAidNumber: string | null
   bloodGroup: string | null
@@ -181,6 +180,7 @@ export async function quickRegisterPatient(req: QuickRegisterRequest): Promise<{
       dateOfBirth: req.dateOfBirth,
       gender: req.gender,
       nationalId: req.nationalId,
+      occupation: null,
       contacts: [{ type: 'Mobile', phoneNumber: req.phoneNumber, email: null, isPrimary: true }],
       addresses: [],
       medicalAidId: null,
@@ -206,6 +206,7 @@ export interface UpdatePatientRequest {
   lastName: string
   middleName: string | null
   notes: string | null
+  occupation: string | null
   medicalAidId: string | null
   medicalAidNumber: string | null
   bloodGroup: string | null
