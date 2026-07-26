@@ -7,6 +7,7 @@ export const patientSchema = z.object({
   dateOfBirth: z.string().min(1, 'Date of birth is required'),
   gender: z.enum(['Male', 'Female', 'Other']),
   nationalId: z.string().min(1, 'National ID is required'),
+  occupation: z.string().optional(),
   contact: z.object({
     phoneNumber: z.string().min(1, 'Phone number is required'),
     email: z.string().email('Invalid email').optional().or(z.literal('')),

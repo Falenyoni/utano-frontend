@@ -1,10 +1,11 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router'
 import { patientSchema, type PatientFormValues } from './patientSchema'
 import { useCreatePatient } from './useCreatePatient'
 import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
 import { COUNTRIES } from '@/shared/constants/countries'
+import { OccupationCombobox } from '@/shared/components/OccupationCombobox'
 
 const BLOOD_GROUPS = ['APositive', 'ANegative', 'BPositive', 'BNegative', 'ABPositive', 'ABNegative', 'OPositive', 'ONegative']
 const BLOOD_GROUP_LABELS: Record<string, string> = {
@@ -20,6 +21,7 @@ export function NewPatientPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<PatientFormValues>({
     resolver: zodResolver(patientSchema),
@@ -84,6 +86,21 @@ export function NewPatientPage() {
               <label className={labelClass}>National ID</label>
               <input {...register('nationalId')} className={inputClass} />
               {errors.nationalId && <p className={errorClass}>{errors.nationalId.message}</p>}
+            </div>
+
+            <div>
+              <label className={labelClass}>Occupation</label>
+              <Controller
+                name="occupation"
+                control={control}
+                render={({ field }) => (
+                  <OccupationCombobox
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    className={inputClass}
+                  />
+                )}
+              />
             </div>
           </div>
         </section>

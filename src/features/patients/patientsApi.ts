@@ -34,6 +34,7 @@ export interface CreatePatientRequest {
   dateOfBirth: string
   gender: string
   nationalId: string
+  occupation: string | null
   contacts: Array<{
     type: string
     phoneNumber: string
@@ -48,6 +49,7 @@ export interface CreatePatientRequest {
     country: string
     isPrimary: boolean
   }>
+  occupation: string | null
   medicalAidId: string | null
   medicalAidNumber: string | null
   bloodGroup: string | null
@@ -84,6 +86,7 @@ export interface PatientDetail {
   gender: string
   status: string
   notes: string | null
+  occupation: string | null
   bloodGroup: string | null
   allergies: string | null
   chronicConditions: string | null
@@ -123,6 +126,7 @@ export function toCreatePatientRequest(values: PatientFormValues): CreatePatient
     dateOfBirth: values.dateOfBirth,
     gender: values.gender,
     nationalId: values.nationalId,
+    occupation: values.occupation || null,
     contacts: [
       {
         type: 'Mobile',

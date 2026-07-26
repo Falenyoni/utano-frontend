@@ -38,8 +38,10 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         <NotificationBell />
         <div className="hidden sm:block text-right">
           <p className="text-sm font-medium text-gray-800 dark:text-gray-200 leading-tight">{user?.fullName}</p>
-          {user && user.roles.length > 0 && (
-            <p className="text-xs leading-tight" style={{ color: 'var(--color-primary)' }}>{user.roles.join(', ')}</p>
+          {user && (
+            <p className="text-xs leading-tight" style={{ color: 'var(--color-primary)' }}>
+              {user.roles.length > 0 ? user.roles.join(', ') : user.role}
+            </p>
           )}
         </div>
         <div

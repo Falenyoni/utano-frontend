@@ -5,6 +5,7 @@ import { useUpdatePatient, useDeactivatePatient, useActivatePatient, useAddConta
 import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
 import { useVisits } from '@/features/consultations/useVisits'
 import type { Contact, Address } from './patientsApi'
+import { OccupationCombobox } from '@/shared/components/OccupationCombobox'
 
 const STATUS_COLORS: Record<string, string> = {
   InProgress: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
@@ -385,6 +386,7 @@ export function PatientDetailPage() {
   const [lastName, setLastName] = useState('')
   const [middleName, setMiddleName] = useState('')
   const [notes, setNotes] = useState('')
+  const [occupation, setOccupation] = useState('')
   const [medicalAidId, setMedicalAidId] = useState('')
   const [medicalAidNumber, setMedicalAidNumber] = useState('')
   const [bloodGroup, setBloodGroup] = useState('')
@@ -401,6 +403,7 @@ export function PatientDetailPage() {
     setLastName(patient?.lastName ?? '')
     setMiddleName(patient?.middleName ?? '')
     setNotes(patient?.notes ?? '')
+    setOccupation(patient?.occupation ?? '')
     setMedicalAidId(patient?.medicalAidId ?? '')
     setMedicalAidNumber(patient?.medicalAidNumber ?? '')
     setBloodGroup(patient?.bloodGroup ?? '')
@@ -419,6 +422,7 @@ export function PatientDetailPage() {
         lastName,
         middleName: middleName || null,
         notes: notes || null,
+        occupation: occupation || null,
         medicalAidId: medicalAidId || null,
         medicalAidNumber: medicalAidNumber || null,
         bloodGroup: bloodGroup || null,
@@ -515,6 +519,10 @@ export function PatientDetailPage() {
               <dt className="text-gray-500 dark:text-gray-400">Gender</dt>
               <dd className="text-gray-900 dark:text-gray-100">{patient.gender}</dd>
             </div>
+            <div>
+              <dt className="text-gray-500 dark:text-gray-400">Occupation</dt>
+              <dd className="text-gray-900 dark:text-gray-100">{patient.occupation || '—'}</dd>
+            </div>
             <div className="col-span-2">
               <dt className="text-gray-500 dark:text-gray-400">Notes</dt>
               <dd className="text-gray-900 dark:text-gray-100">{patient.notes || '—'}</dd>
@@ -542,6 +550,10 @@ export function PatientDetailPage() {
               <div>
                 <label className={labelClass}>Middle Name</label>
                 <input value={middleName} onChange={(e) => setMiddleName(e.target.value)} className={inputClass} />
+              </div>
+              <div>
+                <label className={labelClass}>Occupation</label>
+                <OccupationCombobox value={occupation} onChange={setOccupation} className={inputClass} />
               </div>
             </div>
             <div>
