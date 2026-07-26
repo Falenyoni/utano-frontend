@@ -1,7 +1,8 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router'
 import { lazy, Suspense } from 'react'
 import App from '@/App'
 import { ProtectedRoute } from '@/shared/lib/auth/ProtectedRoute'
+import { SettingsLayout } from '@/features/settings/SettingsLayout'
 
 const DashboardPage = lazy(() =>
   import('@/app/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -57,8 +58,26 @@ const ReportsPage = lazy(() =>
 const ClaimsPage = lazy(() =>
   import('@/features/claims/ClaimsPage').then((m) => ({ default: m.ClaimsPage })),
 )
-const SettingsPage = lazy(() =>
-  import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+const UsersPage = lazy(() =>
+  import('@/features/settings/UsersPage').then((m) => ({ default: m.UsersPage })),
+)
+const RolesPage = lazy(() =>
+  import('@/features/settings/RolesPage').then((m) => ({ default: m.RolesPage })),
+)
+const ServicePricingPage = lazy(() =>
+  import('@/features/settings/ServicePricingPage').then((m) => ({ default: m.ServicePricingPage })),
+)
+const PracticePage = lazy(() =>
+  import('@/features/settings/PracticePage').then((m) => ({ default: m.PracticePage })),
+)
+const BrandingPage = lazy(() =>
+  import('@/features/settings/BrandingPage').then((m) => ({ default: m.BrandingPage })),
+)
+const DoctorsPageSettings = lazy(() =>
+  import('@/features/doctors/DoctorsPage').then((m) => ({ default: m.DoctorsPage })),
+)
+const MedicalAidsPage = lazy(() =>
+  import('@/features/medicalAids/MedicalAidsPage').then((m) => ({ default: m.MedicalAidsPage })),
 )
 const LoginPage = lazy(() =>
   import('@/features/auth/LoginPage').then((m) => ({ default: m.LoginPage })),
@@ -117,7 +136,20 @@ export const router = createBrowserRouter([
           { path: 'claims', element: withSuspense(<ClaimsPage />) },
           { path: 'admin/audit-log', element: withSuspense(<AuditLogPage />) },
           { path: 'financial', element: withSuspense(<FinancialPage />) },
-          { path: 'settings', element: withSuspense(<SettingsPage />) },
+          {
+            path: 'settings',
+            element: <SettingsLayout />,
+            children: [
+              { index: true, element: <Navigate to="users" replace /> },
+              { path: 'users', element: withSuspense(<UsersPage />) },
+              { path: 'roles', element: withSuspense(<RolesPage />) },
+              { path: 'staff', element: withSuspense(<DoctorsPageSettings />) },
+              { path: 'medical-aids', element: withSuspense(<MedicalAidsPage />) },
+              { path: 'service-pricing', element: withSuspense(<ServicePricingPage />) },
+              { path: 'practice', element: withSuspense(<PracticePage />) },
+              { path: 'branding', element: withSuspense(<BrandingPage />) },
+            ],
+          },
         ],
       },
     ],

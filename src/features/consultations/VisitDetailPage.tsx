@@ -434,7 +434,7 @@ function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCom
 export function VisitDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { hasAnyRole } = useAuth()
+  const { hasPermission } = useAuth()
   const { data: visit, isLoading, error } = useVisit(id!)
   const triageVisit = useTriageVisit()
   const updateVisit = useUpdateVisit()
@@ -442,7 +442,7 @@ export function VisitDetailPage() {
 
   const [showRefer, setShowRefer] = useState(false)
 
-  const canReferOrViewHistory = hasAnyRole('Doctor', 'Nurse', 'Admin')
+  const canReferOrViewHistory = hasPermission('patients.refer')
 
   const [editingTriage, setEditingTriage] = useState(false)
   const [triageForm, setTriageForm] = useState<TriageVisitRequest>({

@@ -7,6 +7,7 @@ const settingsNav = [
   { to: '/settings/medical-aids', label: 'Medical Aid Schemes' },
   { to: '/settings/service-pricing', label: 'Service Pricing' },
   { to: '/settings/practice', label: 'Practice' },
+  { to: '/settings/branding', label: 'Branding' },
 ]
 
 export function SettingsLayout() {
