@@ -29,7 +29,8 @@ const blankItem: AddStockItemRequest = {
 }
 
 export function InventoryPage() {
-  const { hasAnyRole } = useAuth()
+  const { hasPermission } = useAuth()
+  const canManage = hasPermission('inventory.manage')
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [lowStockOnly, setLowStockOnly] = useState(false)
@@ -127,22 +128,22 @@ export function InventoryPage() {
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {hasAnyRole('Admin') && (
+        {canManage && (
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowImport(true)}
               className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               ↑ Import
             </button>
-          )}
-          <button
-            onClick={() => { setShowAdd(true); setAddError('') }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
-          >
-            + Add Item
-          </button>
-        </div>
+            <button
+              onClick={() => { setShowAdd(true); setAddError('') }}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+            >
+              + Add Item
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -212,26 +213,28 @@ export function InventoryPage() {
                 <td className="px-4 py-3 text-right text-gray-900 dark:text-gray-100">{formatCurrency(item.sellingPrice)}</td>
                 <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400">{formatCurrency(item.costPrice)}</td>
                 <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => { setReceiveId(item.id); setReceiveQty(''); setReceiveCost(''); setReceiveNotes('') }}
-                      className="text-xs px-2 py-1 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 rounded hover:bg-green-100 dark:hover:bg-green-900 border border-green-200 dark:border-green-800"
-                    >
-                      Receive
-                    </button>
-                    <button
-                      onClick={() => { setAdjustId(item.id); setAdjustQty(''); setAdjustNotes('') }}
-                      className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
-                    >
-                      Adjust
-                    </button>
-                    <button
-                      onClick={() => openEdit(item)}
-                      className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800"
-                    >
-                      Edit
-                    </button>
-                  </div>
+                  {canManage && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => { setReceiveId(item.id); setReceiveQty(''); setReceiveCost(''); setReceiveNotes('') }}
+                        className="text-xs px-2 py-1 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-300 rounded hover:bg-green-100 dark:hover:bg-green-900 border border-green-200 dark:border-green-800"
+                      >
+                        Receive
+                      </button>
+                      <button
+                        onClick={() => { setAdjustId(item.id); setAdjustQty(''); setAdjustNotes('') }}
+                        className="text-xs px-2 py-1 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                      >
+                        Adjust
+                      </button>
+                      <button
+                        onClick={() => openEdit(item)}
+                        className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-100 dark:hover:bg-blue-900 border border-blue-200 dark:border-blue-800"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
                 </td>
               </tr>
             ))}

@@ -3,6 +3,7 @@ import { useInvoices, useCreateInvoice } from './useBilling'
 import { getPatients, getPatientById } from '@/features/patients/patientsApi'
 import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
 import { InvoiceDetailModal } from './InvoiceDetailModal'
+import { useAuth } from '@/shared/lib/auth/AuthContext'
 
 const STATUSES = ['Draft', 'Issued', 'PartiallyPaid', 'Paid', 'Void']
 
@@ -163,6 +164,7 @@ export function BillingPage() {
   const [showNewInvoice, setShowNewInvoice] = useState(false)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null)
 
+  const { hasPermission } = useAuth()
   const { data, isLoading } = useInvoices({ patientName, status, dateFrom, dateTo, page, pageSize: 20 })
   const invoices = data?.data ?? []
 
@@ -191,12 +193,14 @@ export function BillingPage() {
               <p className="text-lg font-bold text-red-600 dark:text-red-400">{formatCurrency(totalOutstanding)}</p>
             </div>
           )}
-          <button
-            onClick={() => setShowNewInvoice(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
-          >
-            + New Invoice
-          </button>
+          {hasPermission('billing.manage') && (
+            <button
+              onClick={() => setShowNewInvoice(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
+            >
+              + New Invoice
+            </button>
+          )}
         </div>
       </div>
 

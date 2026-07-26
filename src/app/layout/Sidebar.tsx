@@ -7,18 +7,19 @@ interface SidebarProps {
   onClose: () => void
 }
 
-const baseNavItems = [
+const allNavItems = [
   { to: '/', label: 'Dashboard', icon: '🏠', end: true },
-  { to: '/waiting-room', label: 'Waiting Room', icon: '🪑' },
-  { to: '/patients', label: 'Patients', icon: '👤' },
-  { to: '/appointments', label: 'Appointments', icon: '📅' },
-  { to: '/consultations', label: 'Consultations', icon: '📋' },
-  { to: '/billing', label: 'Billing', icon: '💳' },
-  { to: '/inventory', label: 'Inventory', icon: '💊' },
-  { to: '/claims', label: 'Med Aid Claims', icon: '🏥' },
-  { to: '/reports', label: 'Reports', icon: '📊' },
-  { to: '/financial', label: 'Financial', icon: '📈' },
-  { to: '/admin/audit-log', label: 'Audit Log', icon: '📜' },
+  { to: '/waiting-room', label: 'Waiting Room', icon: '🪑', permission: 'appointments.view' },
+  { to: '/patients', label: 'Patients', icon: '👤', permission: 'patients.view' },
+  { to: '/appointments', label: 'Appointments', icon: '📅', permission: 'appointments.view' },
+  { to: '/consultations', label: 'Consultations', icon: '📋', permission: 'clinical_notes.view' },
+  { to: '/billing', label: 'Billing', icon: '💳', permission: 'billing.view' },
+  { to: '/inventory', label: 'Inventory', icon: '💊', permission: 'inventory.view' },
+  { to: '/dispensary', label: 'Dispensary', icon: '🧪', permission: 'dispensary.view' },
+  { to: '/claims', label: 'Med Aid Claims', icon: '🏥', permission: 'claims.view' },
+  { to: '/reports', label: 'Reports', icon: '📊', permission: 'reports.view' },
+  { to: '/financial', label: 'Financial', icon: '📈', permission: 'billing.view' },
+  { to: '/admin/audit-log', label: 'Audit Log', icon: '📜', permission: 'settings.users' },
 ]
 
 // Active link uses var(--color-primary) so it reacts to applyBrandingVars immediately
@@ -36,9 +37,8 @@ const linkStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties | u
   isActive ? activeLinkStyle : undefined
 
 function NavContent({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
-  const navItems = user?.hasDispensary
-    ? [...baseNavItems.slice(0, 6), { to: '/dispensary', label: 'Dispensary', icon: '🧪' }, ...baseNavItems.slice(6)]
-    : baseNavItems
+  const { hasPermission } = useAuth()
+  const navItems = allNavItems.filter((item) => !item.permission || hasPermission(item.permission))
 
   return (
     <>
@@ -79,12 +79,14 @@ function NavContent({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
         ))}
       </nav>
 
-      <div className="border-t border-gray-200 dark:border-gray-800 px-2 py-3">
-        <NavLink to="/settings" className={linkClass} style={linkStyle}>
-          <span className="text-base leading-none">⚙️</span>
-          Settings
-        </NavLink>
-      </div>
+      {hasPermission('settings.users') && (
+        <div className="border-t border-gray-200 dark:border-gray-800 px-2 py-3">
+          <NavLink to="/settings" className={linkClass} style={linkStyle}>
+            <span className="text-base leading-none">⚙️</span>
+            Settings
+          </NavLink>
+        </div>
+      )}
     </>
   )
 }

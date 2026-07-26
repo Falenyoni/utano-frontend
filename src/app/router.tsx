@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react'
 import App from '@/App'
 import { ProtectedRoute } from '@/shared/lib/auth/ProtectedRoute'
 import { SettingsLayout } from '@/features/settings/SettingsLayout'
+import { PermissionGuard } from '@/shared/lib/auth/PermissionGuard'
 
 const DashboardPage = lazy(() =>
   import('@/app/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -99,6 +100,10 @@ function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<div>Loading...</div>}>{element}</Suspense>
 }
 
+function withPermission(permission: string, element: React.ReactNode) {
+  return <PermissionGuard permission={permission}>{element}</PermissionGuard>
+}
+
 export const router = createBrowserRouter([
   {
     path: '/login',
@@ -116,26 +121,26 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           { index: true, element: withSuspense(<DashboardPage />) },
-          { path: 'patients', element: withSuspense(<PatientsPage />) },
-          { path: 'patients/new', element: withSuspense(<NewPatientPage />) },
-          { path: 'patients/:id', element: withSuspense(<PatientDetailPage />) },
-          { path: 'patients/:id/visits', element: withSuspense(<PatientVisitsPage />) },
-          { path: 'waiting-room', element: withSuspense(<WaitingRoomPage />) },
-          { path: 'appointments', element: withSuspense(<AppointmentsPage />) },
-          { path: 'appointments/new', element: withSuspense(<NewAppointmentPage />) },
-          { path: 'appointments/walk-in', element: withSuspense(<WalkInPage />) },
-          { path: 'consultations', element: withSuspense(<ConsultationsPage />) },
-          { path: 'consultations/new', element: withSuspense(<NewVisitPage />) },
-          { path: 'consultations/:id', element: withSuspense(<VisitDetailPage />) },
-          { path: 'billing', element: withSuspense(<BillingPage />) },
-          { path: 'billing/:id', element: withSuspense(<InvoiceDetailPage />) },
-          { path: 'inventory', element: withSuspense(<InventoryPage />) },
-          { path: 'inventory/:id', element: withSuspense(<StockItemDetailPage />) },
-          { path: 'dispensary', element: withSuspense(<DispensaryPage />) },
-          { path: 'reports', element: withSuspense(<ReportsPage />) },
-          { path: 'claims', element: withSuspense(<ClaimsPage />) },
-          { path: 'admin/audit-log', element: withSuspense(<AuditLogPage />) },
-          { path: 'financial', element: withSuspense(<FinancialPage />) },
+          { path: 'patients', element: withPermission('patients.view', withSuspense(<PatientsPage />)) },
+          { path: 'patients/new', element: withPermission('patients.create', withSuspense(<NewPatientPage />)) },
+          { path: 'patients/:id', element: withPermission('patients.view', withSuspense(<PatientDetailPage />)) },
+          { path: 'patients/:id/visits', element: withPermission('patients.view', withSuspense(<PatientVisitsPage />)) },
+          { path: 'waiting-room', element: withPermission('appointments.view', withSuspense(<WaitingRoomPage />)) },
+          { path: 'appointments', element: withPermission('appointments.view', withSuspense(<AppointmentsPage />)) },
+          { path: 'appointments/new', element: withPermission('appointments.create', withSuspense(<NewAppointmentPage />)) },
+          { path: 'appointments/walk-in', element: withPermission('appointments.create', withSuspense(<WalkInPage />)) },
+          { path: 'consultations', element: withPermission('clinical_notes.view', withSuspense(<ConsultationsPage />)) },
+          { path: 'consultations/new', element: withPermission('clinical_notes.create', withSuspense(<NewVisitPage />)) },
+          { path: 'consultations/:id', element: withPermission('clinical_notes.view', withSuspense(<VisitDetailPage />)) },
+          { path: 'billing', element: withPermission('billing.view', withSuspense(<BillingPage />)) },
+          { path: 'billing/:id', element: withPermission('billing.view', withSuspense(<InvoiceDetailPage />)) },
+          { path: 'inventory', element: withPermission('inventory.view', withSuspense(<InventoryPage />)) },
+          { path: 'inventory/:id', element: withPermission('inventory.view', withSuspense(<StockItemDetailPage />)) },
+          { path: 'dispensary', element: withPermission('dispensary.view', withSuspense(<DispensaryPage />)) },
+          { path: 'reports', element: withPermission('reports.view', withSuspense(<ReportsPage />)) },
+          { path: 'claims', element: withPermission('claims.view', withSuspense(<ClaimsPage />)) },
+          { path: 'admin/audit-log', element: withPermission('settings.users', withSuspense(<AuditLogPage />)) },
+          { path: 'financial', element: withPermission('billing.view', withSuspense(<FinancialPage />)) },
           {
             path: 'settings',
             element: <SettingsLayout />,

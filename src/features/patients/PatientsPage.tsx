@@ -10,7 +10,7 @@ export function PatientsPage() {
   const [page, setPage] = useState(1)
   const [showImport, setShowImport] = useState(false)
   const qc = useQueryClient()
-  const { hasAnyRole } = useAuth()
+  const { hasPermission } = useAuth()
 
   const { data, isLoading, error } = usePatients({ searchTerm, page, pageSize: 20 })
 
@@ -30,22 +30,22 @@ export function PatientsPage() {
             {data ? `${data.totalCount} total` : 'Loading patient records...'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {hasAnyRole('Admin') && (
+        {hasPermission('patients.create') && (
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setShowImport(true)}
               className="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               ↑ Import
             </button>
-          )}
-          <Link
-            to="/patients/new"
-            className="inline-block bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700"
-          >
-            + Register
-          </Link>
-        </div>
+            <Link
+              to="/patients/new"
+              className="inline-block bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700"
+            >
+              + Register
+            </Link>
+          </div>
+        )}
       </div>
 
       <input
