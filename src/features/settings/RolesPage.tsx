@@ -12,8 +12,10 @@ const PERMISSION_GROUPS: Record<string, string> = {
   patients: 'Patients',
   appointments: 'Appointments',
   clinical_notes: 'Clinical Notes',
+  dispensary: 'Dispensary',
   inventory: 'Inventory',
   billing: 'Billing',
+  claims: 'Claims',
   reports: 'Reports',
   settings: 'Settings',
 }
