@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router'
 import { useAuth } from '@/shared/lib/auth/AuthContext'
+import { useFeatures } from '@/shared/lib/features/FeaturesContext'
 
 interface SidebarProps {
   open: boolean
@@ -13,12 +14,12 @@ const allNavItems = [
   { to: '/patients', label: 'Patients', icon: '👤', permission: 'patients.view' },
   { to: '/appointments', label: 'Appointments', icon: '📅', permission: 'appointments.view' },
   { to: '/consultations', label: 'Consultations', icon: '📋', permission: 'clinical_notes.view' },
-  { to: '/billing', label: 'Billing', icon: '💳', permission: 'billing.view' },
-  { to: '/inventory', label: 'Inventory', icon: '💊', permission: 'inventory.view' },
   { to: '/dispensary', label: 'Dispensary', icon: '🧪', permission: 'dispensary.view' },
-  { to: '/claims', label: 'Med Aid Claims', icon: '🏥', permission: 'claims.view' },
+  { to: '/billing', label: 'Billing', icon: '💳', permission: 'billing.view', feature: 'billing' },
+  { to: '/claims', label: 'Med Aid Claims', icon: '🏥', permission: 'claims.view', feature: 'billing' },
+  { to: '/financial', label: 'Financial', icon: '📈', permission: 'billing.view', feature: 'billing' },
+  { to: '/inventory', label: 'Inventory', icon: '💊', permission: 'inventory.view', feature: 'inventory' },
   { to: '/reports', label: 'Reports', icon: '📊', permission: 'reports.view' },
-  { to: '/financial', label: 'Financial', icon: '📈', permission: 'billing.view' },
   { to: '/admin/audit-log', label: 'Audit Log', icon: '📜', permission: 'settings.users' },
 ]
 
@@ -38,7 +39,12 @@ const linkStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties | u
 
 function NavContent({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
   const { hasPermission } = useAuth()
-  const navItems = allNavItems.filter((item) => !item.permission || hasPermission(item.permission))
+  const { hasFeature } = useFeatures()
+  const navItems = allNavItems.filter(
+    (item) =>
+      (!item.permission || hasPermission(item.permission)) &&
+      (!item.feature || hasFeature(item.feature)),
+  )
 
   return (
     <>
