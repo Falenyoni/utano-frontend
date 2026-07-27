@@ -29,6 +29,8 @@ export interface VisitDetail {
   temperatureCelsius: number | null
   pulseRate: number | null
   oxygenSaturation: number | null
+  painScore: number | null
+  priority: string | null
   chiefComplaint: string | null
   symptoms: string | null
   diagnosis: string | null
@@ -72,6 +74,8 @@ export interface TriageVisitRequest {
   pulseRate: number | null
   oxygenSaturation: number | null
   chiefComplaint: string | null
+  painScore: number | null
+  priority: string | null
 }
 
 export interface UpdateVisitRequest {

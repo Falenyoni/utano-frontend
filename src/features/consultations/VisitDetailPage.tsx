@@ -445,13 +445,15 @@ export function VisitDetailPage() {
   const [showRefer, setShowRefer] = useState(false)
 
   const canReferOrViewHistory = hasPermission('patients.refer')
+  const canTriage = hasPermission('triage.create')
+  const canEditClinical = hasPermission('clinical_notes.edit')
 
   const [editingTriage, setEditingTriage] = useState(false)
   const [triageForm, setTriageForm] = useState<TriageVisitRequest>({
     bloodPressureSystolic: null, bloodPressureDiastolic: null,
     weightKg: null, heightCm: null,
     temperatureCelsius: null, pulseRate: null, oxygenSaturation: null,
-    chiefComplaint: null,
+    chiefComplaint: null, painScore: null, priority: null,
   })
 
   const [editingNotes, setEditingNotes] = useState(false)
@@ -472,6 +474,8 @@ export function VisitDetailPage() {
       pulseRate: visit.pulseRate,
       oxygenSaturation: visit.oxygenSaturation,
       chiefComplaint: visit.chiefComplaint,
+      painScore: visit.painScore,
+      priority: visit.priority,
     })
     setEditingTriage(true)
   }
@@ -563,14 +567,14 @@ export function VisitDetailPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Triage</h3>
-            <span className="text-xs text-gray-400 dark:text-gray-500">— Nurse</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">— Triage / Nurse</span>
             {(visit.status === 'Triaged' || visit.status === 'Completed') && (
               <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-medium">
                 Triaged
               </span>
             )}
           </div>
-          {!editingTriage && !isCompleted && (
+          {canTriage && !editingTriage && !isCompleted && (
             <button onClick={startEditTriage} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
               {visit.status === 'InProgress' ? 'Record Vitals' : 'Edit'}
             </button>
@@ -589,6 +593,8 @@ export function VisitDetailPage() {
               <Field label="Pulse Rate" value={visit.pulseRate ? `${visit.pulseRate} bpm` : null} />
               <Field label="O₂ Saturation" value={visit.oxygenSaturation ? `${visit.oxygenSaturation}%` : null} />
             </div>
+            <Field label="Pain Score" value={visit.painScore != null ? `${visit.painScore} / 10` : null} />
+            <Field label="Priority" value={visit.priority} />
             <Field label="Chief Complaint" value={visit.chiefComplaint} />
           </div>
         ) : (
@@ -631,6 +637,22 @@ export function VisitDetailPage() {
               </div>
             </div>
             <div>
+              <label className={labelClass}>Pain Score (0–10)</label>
+              <input type="number" min={0} max={10} value={triageForm.painScore ?? ''} className={inputClass}
+                onChange={(e) => setTriageForm((f) => ({ ...f, painScore: numOrNull(e.target.value) as number | null }))} />
+            </div>
+            <div>
+              <label className={labelClass}>Priority</label>
+              <select value={triageForm.priority ?? ''} className={inputClass}
+                onChange={(e) => setTriageForm((f) => ({ ...f, priority: e.target.value || null }))}>
+                <option value="">— Select priority —</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+            <div>
               <label className={labelClass}>Chief Complaint</label>
               <textarea rows={2} value={triageForm.chiefComplaint ?? ''} className={textareaClass}
                 onChange={(e) => setTriageForm((f) => ({ ...f, chiefComplaint: e.target.value || null }))} />
@@ -649,8 +671,8 @@ export function VisitDetailPage() {
         )}
       </section>
 
-      {/* Consultation section — Doctor */}
-      <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+      {/* Consultation section — Doctor / Nurse */}
+      {canEditClinical && <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Consultation</h3>
@@ -732,16 +754,16 @@ export function VisitDetailPage() {
             </div>
           </div>
         )}
-      </section>
+      </section>}
 
       {/* Prescriptions */}
-      <PrescriptionsSection visitId={id!} isCompleted={isCompleted} />
+      {canEditClinical && <PrescriptionsSection visitId={id!} isCompleted={isCompleted} />}
 
       {/* Documents & Files (coming soon) */}
-      <FilesSection />
+      {canEditClinical && <FilesSection />}
 
       {/* Complete Visit */}
-      {!isCompleted && !editingTriage && !editingNotes && (
+      {canEditClinical && !isCompleted && !editingTriage && !editingNotes && (
         <div className="flex items-center gap-4">
           <button onClick={handleComplete} disabled={completeVisit.isPending}
             className="bg-green-600 hover:bg-green-700 text-white rounded-md px-5 py-2 text-sm font-medium disabled:opacity-50">
