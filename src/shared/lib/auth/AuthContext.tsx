@@ -12,6 +12,9 @@ export interface User {
   primaryColor?: string | null
   logoBase64?: string | null
   hasDispensary?: boolean
+  subscriptionTier: string
+  subscriptionStatus: string
+  trialEndsAt?: string | null
 }
 
 function applyBrandingVars(primaryColor?: string | null) {
@@ -54,6 +57,15 @@ export function clearStoredAuth() {
   localStorage.removeItem(STORAGE_KEY)
 }
 
+export interface SubscriptionState {
+  tier: string
+  status: string
+  trialEndsAt: Date | null
+  isTrialActive: boolean
+  trialDaysLeft: number | null
+  isActive: boolean
+}
+
 interface AuthContextValue {
   user: User | null
   isAuthenticated: boolean
@@ -62,6 +74,7 @@ interface AuthContextValue {
   hasPermission: (permission: string) => boolean
   hasAnyRole: (...roles: string[]) => boolean
   updateBranding: (primaryColor: string | null, logoBase64: string | null) => void
+  subscription: SubscriptionState | null
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -99,6 +112,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return roles.some((r) => user.roles.includes(r) || user.role === r)
   }
 
+  function getSubscription(): SubscriptionState | null {
+    if (!user) return null
+    const trialEndsAt = user.trialEndsAt ? new Date(user.trialEndsAt) : null
+    const now = new Date()
+    const isTrialActive = user.subscriptionStatus === 'Trial' && !!trialEndsAt && trialEndsAt > now
+    const trialDaysLeft = isTrialActive && trialEndsAt
+      ? Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : null
+    const isActive =
+      user.subscriptionStatus === 'Active' ||
+      (user.subscriptionStatus === 'Trial' && isTrialActive)
+    return { tier: user.subscriptionTier, status: user.subscriptionStatus, trialEndsAt, isTrialActive, trialDaysLeft, isActive }
+  }
+
   function updateBranding(primaryColor: string | null, logoBase64: string | null) {
     setUser((u) => {
       if (!u) return u
@@ -112,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: user !== null, login, logout, hasPermission, hasAnyRole, updateBranding }}
+      value={{ user, isAuthenticated: user !== null, login, logout, hasPermission, hasAnyRole, updateBranding, subscription: getSubscription() }}
     >
       {children}
     </AuthContext.Provider>

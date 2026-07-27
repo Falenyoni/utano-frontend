@@ -51,5 +51,9 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     }
   }
 
+  if (response.status === 402) {
+    window.dispatchEvent(new CustomEvent('utano:subscription_required'))
+  }
+
   return response
 }

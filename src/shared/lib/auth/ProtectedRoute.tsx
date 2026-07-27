@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { useAuth } from './AuthContext'
+import { PaywallScreen } from './PaywallScreen'
 
 export function ProtectedRoute() {
   const { isAuthenticated } = useAuth()
@@ -9,5 +10,9 @@ export function ProtectedRoute() {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  return <Outlet />
+  return (
+    <PaywallScreen>
+      <Outlet />
+    </PaywallScreen>
+  )
 }

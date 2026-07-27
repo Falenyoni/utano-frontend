@@ -15,6 +15,10 @@ export interface LoginResponse {
   practiceName: string
   primaryColor: string | null
   logoBase64: string | null
+  hasDispensary: boolean
+  subscriptionTier: string
+  subscriptionStatus: string
+  trialEndsAt: string | null
   accessToken: string
   refreshToken: string
   expiresAt: string
