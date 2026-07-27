@@ -100,7 +100,7 @@ function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<div>Loading...</div>}>{element}</Suspense>
 }
 
-function withPermission(permission: string, element: React.ReactNode) {
+function withPermission(permission: string | string[], element: React.ReactNode) {
   return <PermissionGuard permission={permission}>{element}</PermissionGuard>
 }
 
@@ -129,9 +129,9 @@ export const router = createBrowserRouter([
           { path: 'appointments', element: withPermission('appointments.view', withSuspense(<AppointmentsPage />)) },
           { path: 'appointments/new', element: withPermission('appointments.create', withSuspense(<NewAppointmentPage />)) },
           { path: 'appointments/walk-in', element: withPermission('appointments.create', withSuspense(<WalkInPage />)) },
-          { path: 'consultations', element: withPermission('clinical_notes.view', withSuspense(<ConsultationsPage />)) },
+          { path: 'consultations', element: withPermission(['clinical_notes.view', 'triage.create'], withSuspense(<ConsultationsPage />)) },
           { path: 'consultations/new', element: withPermission('clinical_notes.create', withSuspense(<NewVisitPage />)) },
-          { path: 'consultations/:id', element: withPermission('clinical_notes.view', withSuspense(<VisitDetailPage />)) },
+          { path: 'consultations/:id', element: withPermission(['clinical_notes.view', 'triage.create'], withSuspense(<VisitDetailPage />)) },
           { path: 'billing', element: withPermission('billing.view', withSuspense(<BillingPage />)) },
           { path: 'billing/:id', element: withPermission('billing.view', withSuspense(<InvoiceDetailPage />)) },
           { path: 'inventory', element: withPermission('inventory.view', withSuspense(<InventoryPage />)) },

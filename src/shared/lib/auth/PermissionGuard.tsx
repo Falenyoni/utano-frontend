@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react'
 import { useAuth } from './AuthContext'
 
-export function PermissionGuard({ permission, children }: { permission: string; children: ReactNode }) {
+export function PermissionGuard({ permission, children }: { permission: string | string[]; children: ReactNode }) {
   const { hasPermission } = useAuth()
 
-  if (!hasPermission(permission)) {
+  const allowed = Array.isArray(permission)
+    ? permission.some((p) => hasPermission(p))
+    : hasPermission(permission)
+
+  if (!allowed) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="text-4xl mb-4">🔒</div>

@@ -8,12 +8,13 @@ interface SidebarProps {
   onClose: () => void
 }
 
+// permission: a single string (required) or array (any match shows the item)
 const allNavItems = [
   { to: '/', label: 'Dashboard', icon: '🏠', end: true },
   { to: '/waiting-room', label: 'Waiting Room', icon: '🪑', permission: 'appointments.view' },
   { to: '/patients', label: 'Patients', icon: '👤', permission: 'patients.view' },
   { to: '/appointments', label: 'Appointments', icon: '📅', permission: 'appointments.view' },
-  { to: '/consultations', label: 'Consultations', icon: '📋', permission: 'clinical_notes.view' },
+  { to: '/consultations', label: 'Consultations', icon: '📋', permission: ['clinical_notes.view', 'triage.create'] },
   { to: '/dispensary', label: 'Dispensary', icon: '🧪', permission: 'dispensary.view' },
   { to: '/billing', label: 'Billing', icon: '💳', permission: 'billing.view', feature: 'billing' },
   { to: '/claims', label: 'Med Aid Claims', icon: '🏥', permission: 'claims.view', feature: 'billing' },
@@ -40,11 +41,14 @@ const linkStyle = ({ isActive }: { isActive: boolean }): React.CSSProperties | u
 function NavContent({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
   const { hasPermission } = useAuth()
   const { hasFeature } = useFeatures()
-  const navItems = allNavItems.filter(
-    (item) =>
-      (!item.permission || hasPermission(item.permission)) &&
-      (!item.feature || hasFeature(item.feature)),
-  )
+  const navItems = allNavItems.filter((item) => {
+    const permOk = !item.permission || (
+      Array.isArray(item.permission)
+        ? item.permission.some((p) => hasPermission(p))
+        : hasPermission(item.permission)
+    )
+    return permOk && (!item.feature || hasFeature(item.feature))
+  })
 
   return (
     <>
