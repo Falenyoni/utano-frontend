@@ -12,6 +12,7 @@ const PERMISSION_GROUPS: Record<string, string> = {
   patients: 'Patients',
   appointments: 'Appointments',
   clinical_notes: 'Clinical Notes',
+  triage: 'Triage',
   dispensary: 'Dispensary',
   inventory: 'Inventory',
   billing: 'Billing',
@@ -31,7 +32,8 @@ function groupPermissions(keys: string[]): Record<string, string[]> {
 }
 
 function permissionLabel(key: string): string {
-  return key.split('.')[1]?.replace(/_/g, ' ') ?? key
+  const parts = key.split('.')
+  return parts.slice(1).join(' ').replace(/_/g, ' ') || key
 }
 
 function PermissionGrid({

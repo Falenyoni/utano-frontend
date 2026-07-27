@@ -17,7 +17,7 @@ const emptyCreate = { firstName: '', lastName: '', email: '', password: '', role
 
 export function UsersPage() {
   const qc = useQueryClient()
-  const { hasAnyRole } = useAuth()
+  const { hasPermission } = useAuth()
   const { data: users = [], isLoading } = useQuery({ queryKey: ['users'], queryFn: getUsers })
   const { data: roles = [] } = useQuery({ queryKey: ['roles'], queryFn: getRoles })
 
@@ -83,7 +83,7 @@ export function UsersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {hasAnyRole('Admin') && (
+          {hasPermission('settings.users.manage') && (
             <button
               onClick={() => setShowImport(true)}
               className="px-4 py-2 text-sm font-medium rounded-md border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"

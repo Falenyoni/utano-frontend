@@ -21,7 +21,7 @@ const allNavItems = [
   { to: '/financial', label: 'Financial', icon: '📈', permission: 'billing.view', feature: 'billing' },
   { to: '/inventory', label: 'Inventory', icon: '💊', permission: 'inventory.view', feature: 'inventory' },
   { to: '/reports', label: 'Reports', icon: '📊', permission: 'reports.view' },
-  { to: '/admin/audit-log', label: 'Audit Log', icon: '📜', permission: 'settings.users' },
+  { to: '/admin/audit-log', label: 'Audit Log', icon: '📜', permission: 'settings.roles' },
 ]
 
 // Active link uses var(--color-primary) so it reacts to applyBrandingVars immediately
@@ -89,7 +89,11 @@ function NavContent({ user }: { user: ReturnType<typeof useAuth>['user'] }) {
         ))}
       </nav>
 
-      {hasPermission('settings.users') && (
+      {[
+        'settings.users.view', 'settings.roles',
+        'settings.staff.view', 'settings.practice',
+        'settings.billing_config.view',
+      ].some((p) => hasPermission(p)) && (
         <div className="border-t border-gray-200 dark:border-gray-800 px-2 py-3">
           <NavLink to="/settings" className={linkClass} style={linkStyle}>
             <span className="text-base leading-none">⚙️</span>

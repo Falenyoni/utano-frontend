@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import { lazy, Suspense } from 'react'
+import { useAuth } from '@/shared/lib/auth/AuthContext'
 import App from '@/App'
 import { ProtectedRoute } from '@/shared/lib/auth/ProtectedRoute'
 import { SettingsLayout } from '@/features/settings/SettingsLayout'
@@ -104,6 +105,16 @@ function withPermission(permission: string | string[], element: React.ReactNode)
   return <PermissionGuard permission={permission}>{element}</PermissionGuard>
 }
 
+function SettingsRedirect() {
+  const { hasPermission } = useAuth()
+  if (hasPermission('settings.users.view')) return <Navigate to="users" replace />
+  if (hasPermission('settings.roles')) return <Navigate to="roles" replace />
+  if (hasPermission('settings.staff.view')) return <Navigate to="staff" replace />
+  if (hasPermission('settings.practice')) return <Navigate to="practice" replace />
+  if (hasPermission('settings.billing_config.view')) return <Navigate to="service-pricing" replace />
+  return <Navigate to="/" replace />
+}
+
 export const router = createBrowserRouter([
   {
     path: '/login',
@@ -139,20 +150,20 @@ export const router = createBrowserRouter([
           { path: 'dispensary', element: withPermission('dispensary.view', withSuspense(<DispensaryPage />)) },
           { path: 'reports', element: withPermission('reports.view', withSuspense(<ReportsPage />)) },
           { path: 'claims', element: withPermission('claims.view', withSuspense(<ClaimsPage />)) },
-          { path: 'admin/audit-log', element: withPermission('settings.users', withSuspense(<AuditLogPage />)) },
+          { path: 'admin/audit-log', element: withPermission('settings.roles', withSuspense(<AuditLogPage />)) },
           { path: 'financial', element: withPermission('billing.view', withSuspense(<FinancialPage />)) },
           {
             path: 'settings',
             element: <SettingsLayout />,
             children: [
-              { index: true, element: <Navigate to="users" replace /> },
-              { path: 'users', element: withSuspense(<UsersPage />) },
-              { path: 'roles', element: withSuspense(<RolesPage />) },
-              { path: 'staff', element: withSuspense(<DoctorsPageSettings />) },
-              { path: 'medical-aids', element: withSuspense(<MedicalAidsPage />) },
-              { path: 'service-pricing', element: withSuspense(<ServicePricingPage />) },
-              { path: 'practice', element: withSuspense(<PracticePage />) },
-              { path: 'branding', element: withSuspense(<BrandingPage />) },
+              { index: true, element: <SettingsRedirect /> },
+              { path: 'users', element: withPermission('settings.users.view', withSuspense(<UsersPage />)) },
+              { path: 'roles', element: withPermission('settings.roles', withSuspense(<RolesPage />)) },
+              { path: 'staff', element: withPermission('settings.staff.view', withSuspense(<DoctorsPageSettings />)) },
+              { path: 'medical-aids', element: withPermission('settings.practice', withSuspense(<MedicalAidsPage />)) },
+              { path: 'service-pricing', element: withPermission('settings.billing_config.view', withSuspense(<ServicePricingPage />)) },
+              { path: 'practice', element: withPermission('settings.practice', withSuspense(<PracticePage />)) },
+              { path: 'branding', element: withPermission('settings.practice', withSuspense(<BrandingPage />)) },
             ],
           },
         ],
