@@ -69,7 +69,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
               onClick={() => setMenuOpen((o) => !o)}
               aria-label="User menu"
               className="h-8 w-8 rounded-full text-white flex items-center justify-center text-sm font-semibold shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-900"
-              style={{ background: 'var(--color-primary)', focusRingColor: 'var(--color-primary)' }}
+              style={{ background: 'var(--color-primary)' }}
             >
               {initials}
             </button>
