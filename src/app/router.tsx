@@ -96,6 +96,9 @@ const SetupPage = lazy(() =>
 const FinancialPage = lazy(() =>
   import('@/features/financial/FinancialPage').then((m) => ({ default: m.FinancialPage })),
 )
+const SubscriptionPage = lazy(() =>
+  import('@/features/settings/SubscriptionPage').then((m) => ({ default: m.SubscriptionPage })),
+)
 
 function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<div>Loading...</div>}>{element}</Suspense>
@@ -164,6 +167,7 @@ export const router = createBrowserRouter([
               { path: 'service-pricing', element: withPermission('settings.billing_config.view', withSuspense(<ServicePricingPage />)) },
               { path: 'practice', element: withPermission('settings.practice', withSuspense(<PracticePage />)) },
               { path: 'branding', element: withPermission('settings.practice', withSuspense(<BrandingPage />)) },
+              { path: 'subscription', element: withPermission('settings.practice', withSuspense(<SubscriptionPage />)) },
             ],
           },
         ],

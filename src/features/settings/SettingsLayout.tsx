@@ -9,6 +9,7 @@ const settingsNav = [
   { to: '/settings/service-pricing', label: 'Service Pricing', permission: 'settings.billing_config.view' },
   { to: '/settings/practice', label: 'Practice', permission: 'settings.practice' },
   { to: '/settings/branding', label: 'Branding', permission: 'settings.practice' },
+  { to: '/settings/subscription', label: 'Subscription', permission: 'settings.practice' },
 ]
 
 export function SettingsLayout() {
