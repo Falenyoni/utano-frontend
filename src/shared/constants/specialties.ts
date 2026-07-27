@@ -1,5 +1,6 @@
 export const SPECIALTIES = [
   'General Practice',
+  // Doctor specialties
   'Gynaecology',
   'Paediatrics',
   'Dentistry',
@@ -11,6 +12,21 @@ export const SPECIALTIES = [
   'Dermatology',
   'ENT',
   'Cardiology',
+  'Radiology',
+  'Anaesthesiology',
+  'Emergency Medicine',
+  'Oncology',
+  // Nursing specialties
+  'Midwifery',
+  'ICU / Critical Care Nursing',
+  'Theatre Nursing',
+  'Emergency Nursing',
+  'Oncology Nursing',
+  'Mental Health Nursing',
+  'Community Health Nursing',
+  'Neonatal Nursing',
+  'Infection Control Nursing',
+  'Paediatric Nursing',
 ] as const
 
 export type Specialty = (typeof SPECIALTIES)[number]

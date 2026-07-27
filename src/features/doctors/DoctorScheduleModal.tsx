@@ -146,7 +146,7 @@ export function DoctorScheduleModal({ doctorId, doctorName, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Doctor Schedule</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Work Schedule</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{doctorName}</p>
           </div>
           <button onClick={onClose}
