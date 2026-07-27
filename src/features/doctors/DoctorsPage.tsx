@@ -17,6 +17,7 @@ import { SPECIALTIES } from '@/shared/constants/specialties'
 const ROLE_COLORS: Record<string, string> = {
   Doctor: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   Nurse: 'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300',
+  Triage: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
   Receptionist: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
   Billing: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
   Admin: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
@@ -262,7 +263,7 @@ export function DoctorsPage() {
                   <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{u.status}</td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-end gap-3">
-                      {(u.role === 'Doctor' || u.role === 'Nurse') && (
+                      {(u.role === 'Doctor' || u.role === 'Nurse' || u.role === 'Triage') && (
                         <button
                           onClick={() => setSchedulingUser(u)}
                           className="text-xs text-purple-600 dark:text-purple-400 hover:underline"

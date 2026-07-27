@@ -25,7 +25,7 @@ export interface UpdateUserRequest {
   specialty?: string | null
 }
 
-export const ROLES = ['Doctor', 'Nurse', 'Receptionist', 'Billing', 'Admin'] as const
+export const ROLES = ['Doctor', 'Nurse', 'Triage', 'Receptionist', 'Billing', 'Admin'] as const
 export type Role = (typeof ROLES)[number]
 
 export async function getUsers(role?: string): Promise<StaffUser[]> {
