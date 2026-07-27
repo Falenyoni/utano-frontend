@@ -1,3 +1,5 @@
+import { apiFetch } from '@/shared/lib/api/apiFetch'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 export interface LoginRequest {
   email: string
@@ -46,6 +48,13 @@ export interface RefreshResponse {
   accessToken: string
   refreshToken: string
   expiresAt: string
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  await apiFetch('/api/auth/password', {
+    method: 'PUT',
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
 }
 
 export async function refresh(request: RefreshRequest): Promise<RefreshResponse> {

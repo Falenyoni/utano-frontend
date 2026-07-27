@@ -157,3 +157,14 @@ export async function activateUser(userId: string): Promise<void> {
     throw new Error(err?.detail ?? 'Failed to activate user')
   }
 }
+
+export async function resetUserPassword(userId: string, newPassword: string): Promise<void> {
+  const res = await apiFetch(`/api/users/${userId}/reset-password`, {
+    method: 'POST',
+    body: JSON.stringify({ newPassword }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => null)
+    throw new Error(err?.detail ?? err?.message ?? 'Failed to reset password')
+  }
+}

@@ -7,6 +7,7 @@ import {
   assignUserRoles,
   deactivateUser,
   activateUser,
+  resetUserPassword,
   type UserRow,
   type RoleRow,
 } from './rbacApi'
@@ -27,6 +28,7 @@ export function UsersPage() {
   const [assignedRoleIds, setAssignedRoleIds] = useState<string[]>([])
   const [createForm, setCreateForm] = useState(emptyCreate)
   const [createError, setCreateError] = useState('')
+  const [resetPwUser, setResetPwUser] = useState<UserRow | null>(null)
 
   const createMutation = useMutation({
     mutationFn: () => createUser(createForm),
@@ -145,6 +147,14 @@ export function UsersPage() {
                       >
                         Assign Roles
                       </button>
+                      {hasPermission('settings.users.manage') && (
+                        <button
+                          onClick={() => setResetPwUser(u)}
+                          className="text-amber-600 dark:text-amber-400 hover:underline text-xs"
+                        >
+                          Reset Password
+                        </button>
+                      )}
                       <button
                         onClick={() => toggleMutation.mutate(u)}
                         className="text-gray-500 hover:underline text-xs"
@@ -248,6 +258,14 @@ export function UsersPage() {
         </div>
       )}
 
+      {/* Reset password modal */}
+      {resetPwUser && (
+        <ResetPasswordModal
+          user={resetPwUser}
+          onClose={() => setResetPwUser(null)}
+        />
+      )}
+
       {/* Assign roles modal */}
       {assignUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -301,6 +319,99 @@ export function UsersPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function ResetPasswordModal({ user, onClose }: { user: UserRow; onClose: () => void }) {
+  const [form, setForm] = useState({ newPassword: '', confirmPassword: '' })
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+
+  const mutation = useMutation({
+    mutationFn: () => resetUserPassword(user.id, form.newPassword),
+    onSuccess: () => setSuccess(true),
+    onError: (e: Error) => setError(e.message),
+  })
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (form.newPassword !== form.confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+    mutation.mutate()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+        <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
+          Reset Password — {user.fullName}
+        </h4>
+
+        {success ? (
+          <div className="space-y-4">
+            <p className="text-sm text-green-600 dark:text-green-400">
+              Password has been reset successfully.
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                New Password
+              </label>
+              <input
+                type="password"
+                value={form.newPassword}
+                onChange={(e) => setForm({ ...form, newPassword: e.target.value })}
+                required
+                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+              <p className="text-xs text-gray-400 mt-1">Min 8 chars, uppercase, lowercase, number.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                required
+                className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+            </div>
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={mutation.isPending || !form.newPassword || !form.confirmPassword}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg"
+              >
+                {mutation.isPending ? 'Resetting…' : 'Reset Password'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   )
 }
