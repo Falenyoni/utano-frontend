@@ -39,6 +39,12 @@ const EMPTY: FormState = {
   adminFirstName: '', adminLastName: '', adminEmail: '', adminPassword: '',
 }
 
+const inputClass =
+  'w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400'
+
+const labelClass =
+  'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1'
+
 export function SetupPage() {
   const navigate = useNavigate()
   const [apiKey, setApiKey] = useState('')
@@ -55,7 +61,6 @@ export function SetupPage() {
     e.preventDefault()
     setError(null)
     setIsSubmitting(true)
-
     try {
       const result = await createPractice(form, apiKey)
       setSuccess({ practiceId: result.practiceId, practiceName: result.practiceName })
@@ -66,32 +71,28 @@ export function SetupPage() {
     }
   }
 
-  const inputClass =
-    'w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
-
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white rounded-lg border border-gray-200 p-8 w-full max-w-md space-y-4">
-          <div className="text-green-600 text-4xl text-center">✓</div>
-          <h1 className="text-xl font-bold text-gray-900 text-center">Practice Created</h1>
-          <div className="bg-gray-50 rounded-md p-4 text-sm space-y-2">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm p-8 w-full max-w-md space-y-4">
+          <div className="text-green-500 text-4xl text-center">✓</div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 text-center">Practice Created</h1>
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-sm space-y-3">
             <div>
-              <span className="text-gray-500">Practice</span>
-              <p className="font-medium text-gray-900">{success.practiceName}</p>
+              <span className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">Practice</span>
+              <p className="font-medium text-gray-900 dark:text-gray-100 mt-0.5">{success.practiceName}</p>
             </div>
             <div>
-              <span className="text-gray-500">Practice ID</span>
-              <p className="font-mono text-xs text-gray-700 break-all">{success.practiceId}</p>
+              <span className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">Practice ID</span>
+              <p className="font-mono text-xs text-gray-700 dark:text-gray-300 break-all mt-0.5">{success.practiceId}</p>
             </div>
           </div>
-          <p className="text-sm text-gray-500 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
             The admin can now log in with their email and password.
           </p>
           <button
             onClick={() => navigate('/login')}
-            className="w-full bg-blue-600 text-white rounded-md py-2 text-sm font-medium hover:bg-blue-700"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-medium transition-colors"
           >
             Go to Login
           </button>
@@ -101,24 +102,26 @@ export function SetupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-10">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 py-10">
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-8 space-y-6"
+        className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm w-full max-w-lg p-8 space-y-6"
       >
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Register New Practice</h1>
-          <p className="text-sm text-gray-500 mt-1">Creates the practice and its first admin account.</p>
+        <div className="space-y-1">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Register New Practice</h1>
+          <p className="text-xs text-gray-400 dark:text-gray-500">Creates the practice and its first admin account.</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md px-3 py-2">
+          <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm rounded-lg px-3 py-2">
             {error}
           </div>
         )}
 
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Practice Details</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            Practice Details
+          </h2>
           <div className="grid grid-cols-2 gap-3">
             {PRACTICE_FIELDS.map(({ label, key, type, placeholder }) => (
               <div key={key} className={key === 'physicalAddress' ? 'col-span-2' : ''}>
@@ -137,7 +140,9 @@ export function SetupPage() {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Admin Account</h2>
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            Admin Account
+          </h2>
           <div className="grid grid-cols-2 gap-3">
             {ADMIN_FIELDS.map(({ label, key, type }) => (
               <div key={key}>
@@ -154,8 +159,10 @@ export function SetupPage() {
           </div>
         </section>
 
-        <section className="space-y-3 border-t border-gray-100 pt-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400">Authorization</h2>
+        <section className="space-y-3 border-t border-gray-100 dark:border-gray-800 pt-5">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+            Authorization
+          </h2>
           <div>
             <label className={labelClass}>Admin API Key</label>
             <input
@@ -173,14 +180,14 @@ export function SetupPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 bg-blue-600 text-white rounded-md py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? 'Creating...' : 'Create Practice'}
+            {isSubmitting ? 'Creating…' : 'Create Practice'}
           </button>
           <button
             type="button"
             onClick={() => navigate('/login')}
-            className="px-4 py-2 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
+            className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
           >
             Cancel
           </button>
