@@ -56,6 +56,7 @@ export interface Doctor {
   id: string
   fullName: string
   email: string
+  specialty: string | null
 }
 
 export async function getDoctors(): Promise<Doctor[]> {

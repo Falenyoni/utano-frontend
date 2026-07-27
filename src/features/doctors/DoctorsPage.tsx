@@ -12,6 +12,7 @@ import {
   type StaffUser,
 } from './usersApi'
 import { DoctorScheduleModal } from './DoctorScheduleModal'
+import { SPECIALTIES } from '@/shared/constants/specialties'
 
 const ROLE_COLORS: Record<string, string> = {
   Doctor: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
@@ -27,6 +28,7 @@ const EMPTY_FORM: CreateUserRequest = {
   email: '',
   password: '',
   role: 'Doctor',
+  specialty: null,
 }
 
 const inputClass =
@@ -46,6 +48,7 @@ function EditStaffModal({
     firstName: nameParts[0] ?? '',
     lastName: nameParts.slice(1).join(' ') ?? '',
     role: user.role,
+    specialty: user.specialty,
   })
   const [error, setError] = useState<string | null>(null)
 
@@ -109,6 +112,21 @@ function EditStaffModal({
               ))}
             </select>
           </div>
+          {(form.role === 'Doctor' || form.role === 'Nurse') && (
+            <div>
+              <label className={labelClass}>Specialty</label>
+              <select
+                value={form.specialty ?? ''}
+                onChange={(e) => setForm((f) => ({ ...f, specialty: e.target.value || null }))}
+                className={inputClass}
+              >
+                <option value="">General Practice</option>
+                {SPECIALTIES.filter((s) => s !== 'General Practice').map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          )}
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex justify-end gap-3 pt-1">
             <button
@@ -215,6 +233,9 @@ export function DoctorsPage() {
                   Role
                 </th>
                 <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">
+                  Specialty
+                </th>
+                <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">
                   Status
                 </th>
                 <th className="px-4 py-2" />
@@ -234,6 +255,9 @@ export function DoctorsPage() {
                     >
                       {u.role}
                     </span>
+                  </td>
+                  <td className="px-4 py-2 text-gray-500 dark:text-gray-400 text-xs">
+                    {u.specialty ?? '—'}
                   </td>
                   <td className="px-4 py-2 text-gray-600 dark:text-gray-400">{u.status}</td>
                   <td className="px-4 py-2">
@@ -341,6 +365,21 @@ export function DoctorsPage() {
                   ))}
                 </select>
               </div>
+              {(form.role === 'Doctor' || form.role === 'Nurse') && (
+                <div>
+                  <label className={labelClass}>Specialty</label>
+                  <select
+                    value={form.specialty ?? ''}
+                    onChange={(e) => setForm((f) => ({ ...f, specialty: e.target.value || null }))}
+                    className={inputClass}
+                  >
+                    <option value="">General Practice</option>
+                    {SPECIALTIES.filter((s) => s !== 'General Practice').map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               {formError && (
                 <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
               )}

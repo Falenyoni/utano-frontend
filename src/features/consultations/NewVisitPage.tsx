@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router'
 import { useOpenVisit } from './useVisits'
 import { useDoctors } from '@/features/appointments/useAppointments'
 import { getPatients } from '@/features/patients/patientsApi'
+import { SPECIALTIES } from '@/shared/constants/specialties'
 
 function todayISO() {
   return new Date().toISOString().split('T')[0]
@@ -27,6 +28,7 @@ export function NewVisitPage() {
 
   const [visitDate, setVisitDate] = useState(prefill.visitDate ?? todayISO())
   const [doctorId, setDoctorId] = useState(prefill.doctorId ?? '')
+  const [specialty, setSpecialty] = useState('')
   const [department, setDepartment] = useState('')
   const [patientSearch, setPatientSearch] = useState(prefill.patientName ?? '')
   const [patientId, setPatientId] = useState(prefill.patientId ?? '')
@@ -77,6 +79,7 @@ export function NewVisitPage() {
         doctorName: resolvedDoctorName,
         visitDate,
         department: department.trim() || null,
+        specialty: specialty || null,
         appointmentId: prefill.appointmentId,
         patientGender: patientGender ?? undefined,
         patientDateOfBirth: patientDateOfBirth ?? undefined,
@@ -140,13 +143,32 @@ export function NewVisitPage() {
               className={`${inputClass} ${lockedClass}`}
             />
           ) : (
-            <select value={doctorId} onChange={(e) => setDoctorId(e.target.value)} className={inputClass} required>
+            <select
+              value={doctorId}
+              onChange={(e) => {
+                setDoctorId(e.target.value)
+                const doc = doctors?.find((d) => d.id === e.target.value)
+                setSpecialty(doc?.specialty ?? '')
+              }}
+              className={inputClass}
+              required
+            >
               <option value="">Select doctor...</option>
               {doctors?.map((d) => (
-                <option key={d.id} value={d.id}>{d.fullName}</option>
+                <option key={d.id} value={d.id}>{d.fullName}{d.specialty ? ` — ${d.specialty}` : ''}</option>
               ))}
             </select>
           )}
+        </div>
+
+        <div>
+          <label className={labelClass}>Specialty</label>
+          <select value={specialty} onChange={(e) => setSpecialty(e.target.value)} className={inputClass}>
+            <option value="">General Practice</option>
+            {SPECIALTIES.filter((s) => s !== 'General Practice').map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
 
         <div>

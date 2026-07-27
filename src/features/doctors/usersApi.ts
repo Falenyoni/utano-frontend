@@ -5,6 +5,7 @@ export interface StaffUser {
   fullName: string
   email: string
   role: string
+  specialty: string | null
   status: string
 }
 
@@ -14,12 +15,14 @@ export interface CreateUserRequest {
   email: string
   password: string
   role: string
+  specialty?: string | null
 }
 
 export interface UpdateUserRequest {
   firstName: string
   lastName: string
   role: string
+  specialty?: string | null
 }
 
 export const ROLES = ['Doctor', 'Nurse', 'Receptionist', 'Billing', 'Admin'] as const

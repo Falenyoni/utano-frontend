@@ -20,6 +20,8 @@ export interface VisitDetail {
   doctorName: string
   visitDate: string
   department: string | null
+  specialty: string | null
+  specialtyData: string | null
   bloodPressureSystolic: number | null
   bloodPressureDiastolic: number | null
   weightKg: number | null
@@ -55,6 +57,7 @@ export interface OpenVisitRequest {
   doctorName: string
   visitDate: string
   department?: string | null
+  specialty?: string | null
   appointmentId?: string
   patientGender?: string
   patientDateOfBirth?: string
@@ -79,6 +82,8 @@ export interface UpdateVisitRequest {
   prescription: string | null
   notes: string | null
   department: string | null
+  specialty: string | null
+  specialtyData: string | null
 }
 
 export async function getVisits(params: { patientId?: string; doctorId?: string; date?: string; page?: number; pageSize?: number }): Promise<PagedVisits> {

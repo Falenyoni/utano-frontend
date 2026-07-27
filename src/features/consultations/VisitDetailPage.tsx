@@ -7,6 +7,8 @@ import { useDoctors } from '@/features/appointments/useAppointments'
 import { useAuth } from '@/shared/lib/auth/AuthContext'
 import { useCreateNotification } from '@/features/notifications/useNotifications'
 import type { TriageVisitRequest, UpdateVisitRequest, VisitDetail } from './visitsApi'
+import { SpecialtyFields } from '@/shared/components/SpecialtyFields'
+import { SPECIALTIES } from '@/shared/constants/specialties'
 import type { PrescriptionRow } from './prescriptionsApi'
 import type { StockItemSummary } from '@/features/inventory/inventoryApi'
 
@@ -456,6 +458,7 @@ export function VisitDetailPage() {
   const [notesForm, setNotesForm] = useState<UpdateVisitRequest>({
     chiefComplaint: null, symptoms: null, diagnosis: null,
     treatment: null, prescription: null, notes: null, department: null,
+    specialty: null, specialtyData: null,
   })
 
   function startEditTriage() {
@@ -483,6 +486,8 @@ export function VisitDetailPage() {
       prescription: visit.prescription,
       notes: visit.notes,
       department: visit.department,
+      specialty: visit.specialty,
+      specialtyData: visit.specialtyData,
     })
     setEditingNotes(true)
   }
@@ -659,11 +664,20 @@ export function VisitDetailPage() {
         {!editingNotes ? (
           <div className="space-y-3">
             <Field label="Department" value={visit.department} />
+            {visit.specialty && <Field label="Specialty" value={visit.specialty} />}
             <Field label="Symptoms" value={visit.symptoms} />
             <Field label="Diagnosis" value={visit.diagnosis} />
             <Field label="Treatment" value={visit.treatment} />
             <Field label="General Prescription Notes" value={visit.prescription} />
             <Field label="Notes" value={visit.notes} />
+            {visit.specialty && visit.specialty !== 'General Practice' && (
+              <SpecialtyFields
+                specialty={visit.specialty}
+                specialtyData={visit.specialtyData}
+                onChange={() => {}}
+                readOnly
+              />
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -672,6 +686,19 @@ export function VisitDetailPage() {
               <input value={notesForm.department ?? ''} className={inputClass}
                 placeholder="e.g. Outpatient, Emergency, ICU"
                 onChange={(e) => setNotesForm((f) => ({ ...f, department: e.target.value || null }))} />
+            </div>
+            <div>
+              <label className={labelClass}>Specialty</label>
+              <select
+                value={notesForm.specialty ?? ''}
+                className={inputClass}
+                onChange={(e) => setNotesForm((f) => ({ ...f, specialty: e.target.value || null, specialtyData: null }))}
+              >
+                <option value="">General Practice</option>
+                {SPECIALTIES.filter((s) => s !== 'General Practice').map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
             </div>
             {([
               ['symptoms', 'Symptoms'],
@@ -686,6 +713,13 @@ export function VisitDetailPage() {
                   onChange={(e) => setNotesForm((f) => ({ ...f, [key]: e.target.value || null }))} />
               </div>
             ))}
+            {notesForm.specialty && notesForm.specialty !== 'General Practice' && (
+              <SpecialtyFields
+                specialty={notesForm.specialty}
+                specialtyData={notesForm.specialtyData}
+                onChange={(json) => setNotesForm((f) => ({ ...f, specialtyData: json }))}
+              />
+            )}
             <div className="flex gap-3">
               <button onClick={handleSaveNotes} disabled={updateVisit.isPending}
                 className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
