@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router'
 import { useAppointments } from './useAppointments'
 import { Link } from 'react-router'
+import { useFeatures } from '@/shared/lib/features/FeaturesContext'
 
 function todayISO() {
   return new Date().toISOString().split('T')[0]
@@ -27,6 +28,8 @@ const STATUS_LABEL: Record<string, string> = {
 
 export function WaitingRoomPage() {
   const navigate = useNavigate()
+  const { hasFeature } = useFeatures()
+  const canOpenVisit = hasFeature('clinical_notes')
   const today = todayISO()
 
   const { data: waiting, isLoading } = useAppointments({ date: today, status: 'CheckedIn', pageSize: 100 })
@@ -91,7 +94,7 @@ export function WaitingRoomPage() {
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400 dark:text-gray-500">{waitingSince(appt.createdAt)}</span>
                 <div>
-                  {appt.status === 'CheckedIn' && (
+                  {appt.status === 'CheckedIn' && canOpenVisit && (
                     <button
                       onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
                       className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 font-medium"
@@ -99,7 +102,7 @@ export function WaitingRoomPage() {
                       Open Visit
                     </button>
                   )}
-                  {appt.status === 'InProgress' && (
+                  {appt.status === 'InProgress' && canOpenVisit && (
                     <button onClick={() => navigate('/consultations')}
                       className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline">
                       View Visit
@@ -151,7 +154,7 @@ export function WaitingRoomPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {appt.status === 'CheckedIn' && (
+                    {appt.status === 'CheckedIn' && canOpenVisit && (
                       <button
                         onClick={() => navigate('/consultations/new', {
                           state: {
@@ -168,7 +171,7 @@ export function WaitingRoomPage() {
                         Open Visit
                       </button>
                     )}
-                    {appt.status === 'InProgress' && (
+                    {appt.status === 'InProgress' && canOpenVisit && (
                       <button
                         onClick={() => navigate('/consultations')}
                         className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline"

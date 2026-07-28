@@ -4,6 +4,7 @@ import { useAppointments, useCancelAppointment, useCheckInAppointment, useResche
 import { ImportAppointmentsModal } from './ImportAppointmentsModal'
 import { DayGridView } from './DayGridView'
 import { type AppointmentSummary } from './appointmentsApi'
+import { useFeatures } from '@/shared/lib/features/FeaturesContext'
 
 const STATUS_COLORS: Record<string, string> = {
   Scheduled:  'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
@@ -52,6 +53,9 @@ export function AppointmentsPage() {
 
   const [reassignId, setReassignId] = useState<string | null>(null)
   const [reassignDoctorId, setReassignDoctorId] = useState('')
+
+  const { hasFeature } = useFeatures()
+  const canOpenVisit = hasFeature('clinical_notes')
 
   const today = todayISO()
   const nowTime = nowHHMM()
@@ -227,7 +231,7 @@ export function AppointmentsPage() {
                           Check In
                         </button>
                       )}
-                      {appt.status !== 'InProgress' && (
+                      {appt.status !== 'InProgress' && canOpenVisit && (
                         <button onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
                           className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium">
                           Open Visit
@@ -294,7 +298,7 @@ export function AppointmentsPage() {
                               Check In
                             </button>
                           )}
-                          {appt.status !== 'InProgress' && (
+                          {appt.status !== 'InProgress' && canOpenVisit && (
                             <button onClick={() => navigate('/consultations/new', {
                               state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate }
                             })} className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium">

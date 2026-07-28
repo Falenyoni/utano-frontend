@@ -14,13 +14,13 @@ const allNavItems = [
   { to: '/waiting-room', label: 'Waiting Room', icon: '🪑', permission: 'appointments.view' },
   { to: '/patients', label: 'Patients', icon: '👤', permission: 'patients.view' },
   { to: '/appointments', label: 'Appointments', icon: '📅', permission: 'appointments.view' },
-  { to: '/consultations', label: 'Consultations', icon: '📋', permission: ['clinical_notes.view', 'triage.create'] },
-  { to: '/dispensary', label: 'Dispensary', icon: '🧪', permission: 'dispensary.view' },
+  { to: '/consultations', label: 'Consultations', icon: '📋', permission: ['clinical_notes.view', 'triage.create'], feature: 'clinical_notes' },
+  { to: '/dispensary', label: 'Dispensary', icon: '🧪', permission: 'dispensary.view', feature: 'clinical_notes' },
   { to: '/billing', label: 'Billing', icon: '💳', permission: 'billing.view', feature: 'billing' },
   { to: '/claims', label: 'Med Aid Claims', icon: '🏥', permission: 'claims.view', feature: 'billing' },
   { to: '/financial', label: 'Financial', icon: '📈', permission: 'billing.view', feature: 'billing' },
   { to: '/inventory', label: 'Inventory', icon: '💊', permission: 'inventory.view', feature: 'inventory' },
-  { to: '/reports', label: 'Reports', icon: '📊', permission: 'reports.view' },
+  { to: '/reports', label: 'Reports', icon: '📊', permission: 'reports.view', feature: 'reports' },
   { to: '/admin/audit-log', label: 'Audit Log', icon: '📜', permission: 'settings.roles' },
 ]
 
