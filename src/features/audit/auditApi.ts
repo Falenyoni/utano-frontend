@@ -37,7 +37,7 @@ export async function getAuditLog(params: GetAuditLogParams): Promise<PagedAudit
   if (params.dateTo) q.set('dateTo', params.dateTo)
   q.set('page', String(params.page ?? 1))
   q.set('pageSize', String(params.pageSize ?? 50))
-  const res = await apiFetch(`/api/admin/audit-log?${q}`, { method: 'GET' })
+  const res = await apiFetch(`/api/audit-log?${q}`, { method: 'GET' })
   if (!res.ok) throw new Error('Failed to fetch audit log')
   return res.json()
 }
