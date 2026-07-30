@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router'
 import { useAuth } from '@/shared/lib/auth/AuthContext'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { changePassword } from '@/features/auth/authApi'
+import {
+  useNotificationPreferences,
+  useUpdateNotificationPreferences,
+} from '@/features/notifications/useNotifications'
 
 interface NavbarProps {
   onMenuClick: () => void
@@ -14,6 +18,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [showChangePw, setShowChangePw] = useState(false)
+  const [showNotifPrefs, setShowNotifPrefs] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -86,6 +91,12 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                 >
                   Change Password
                 </button>
+                <button
+                  onClick={() => { setMenuOpen(false); setShowNotifPrefs(true) }}
+                  className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                >
+                  Notification Preferences
+                </button>
                 <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
                 <button
                   onClick={handleLogout}
@@ -101,6 +112,10 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
       {showChangePw && (
         <ChangePasswordModal onClose={() => setShowChangePw(false)} />
+      )}
+
+      {showNotifPrefs && (
+        <NotificationPreferencesModal onClose={() => setShowNotifPrefs(false)} />
       )}
     </>
   )
@@ -213,5 +228,130 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
         )}
       </div>
     </div>
+  )
+}
+
+function NotificationPreferencesModal({ onClose }: { onClose: () => void }) {
+  const { data, isLoading } = useNotificationPreferences()
+  const updatePreferences = useUpdateNotificationPreferences()
+
+  const [inAppEnabled, setInAppEnabled] = useState(true)
+  const [emailEnabled, setEmailEnabled] = useState(false)
+  const [smsEnabled, setSmsEnabled] = useState(false)
+  const [whatsAppEnabled, setWhatsAppEnabled] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    if (!data) return
+    setInAppEnabled(data.inAppEnabled)
+    setEmailEnabled(data.emailEnabled)
+    setSmsEnabled(data.smsEnabled)
+    setWhatsAppEnabled(data.whatsAppEnabled)
+  }, [data])
+
+  async function handleSave() {
+    setSaved(false)
+    await updatePreferences.mutateAsync({ inAppEnabled, emailEnabled, smsEnabled, whatsAppEnabled })
+    setSaved(true)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-sm p-6 space-y-4">
+        <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">Notification Preferences</h4>
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Choose how you'd like to be notified about appointments assigned to you.
+        </p>
+
+        {isLoading ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+        ) : (
+          <div className="space-y-3">
+            <PreferenceToggle
+              label="In-app"
+              description="Bell icon notifications while you're using Utano."
+              checked={inAppEnabled}
+              onChange={setInAppEnabled}
+            />
+            <PreferenceToggle
+              label="Email"
+              description="Coming soon."
+              checked={emailEnabled}
+              onChange={setEmailEnabled}
+              disabled
+            />
+            <PreferenceToggle
+              label="SMS"
+              description="Coming soon."
+              checked={smsEnabled}
+              onChange={setSmsEnabled}
+              disabled
+            />
+            <PreferenceToggle
+              label="WhatsApp"
+              description="Coming soon."
+              checked={whatsAppEnabled}
+              onChange={setWhatsAppEnabled}
+              disabled
+            />
+          </div>
+        )}
+
+        {saved && !updatePreferences.isPending && (
+          <p className="text-sm text-green-600 dark:text-green-400">Preferences saved.</p>
+        )}
+        {updatePreferences.isError && (
+          <p className="text-sm text-red-600 dark:text-red-400">Failed to save preferences.</p>
+        )}
+
+        <div className="flex justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+          >
+            Close
+          </button>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={isLoading || updatePreferences.isPending}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg"
+          >
+            {updatePreferences.isPending ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PreferenceToggle({
+  label,
+  description,
+  checked,
+  onChange,
+  disabled = false,
+}: {
+  label: string
+  description: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+  disabled?: boolean
+}) {
+  return (
+    <label className={`flex items-start gap-3 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}>
+      <input
+        type="checkbox"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+        className="mt-0.5 h-4 w-4 rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500"
+      />
+      <span>
+        <span className="block text-sm font-medium text-gray-800 dark:text-gray-200">{label}</span>
+        <span className="block text-xs text-gray-400 dark:text-gray-500">{description}</span>
+      </span>
+    </label>
   )
 }

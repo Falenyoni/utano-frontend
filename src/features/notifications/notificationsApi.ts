@@ -21,6 +21,16 @@ export interface CreateNotificationRequest {
   referenceId?: string
 }
 
+export interface NotificationPreferences {
+  inAppEnabled: boolean
+  emailEnabled: boolean
+  smsEnabled: boolean
+  whatsAppEnabled: boolean
+  consentRecordedAt: string | null
+}
+
+export type UpdateNotificationPreferencesRequest = Omit<NotificationPreferences, 'consentRecordedAt'>
+
 export const notificationsApi = {
   getMyNotifications: async (): Promise<NotificationItem[]> => {
     const res = await apiFetch(BASE)
@@ -47,6 +57,17 @@ export const notificationsApi = {
 
   markAllAsRead: async (): Promise<void> => {
     const res = await apiFetch(`${BASE}/read-all`, { method: 'PUT' })
+    if (!res.ok) throw new Error(await res.text())
+  },
+
+  getPreferences: async (): Promise<NotificationPreferences> => {
+    const res = await apiFetch(`${BASE}/preferences`)
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
+  updatePreferences: async (body: UpdateNotificationPreferencesRequest): Promise<void> => {
+    const res = await apiFetch(`${BASE}/preferences`, { method: 'PUT', body: JSON.stringify(body) })
     if (!res.ok) throw new Error(await res.text())
   },
 }
