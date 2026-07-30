@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router'
 import {
   useMarkAllAsRead,
   useMarkAsRead,
@@ -6,6 +7,12 @@ import {
   useUnreadCount,
 } from './useNotifications'
 import type { NotificationItem } from './notificationsApi'
+
+function deepLinkFor(n: NotificationItem): string | null {
+  if (!n.referenceId) return null
+  if (n.type.startsWith('Appointment')) return '/appointments'
+  return null
+}
 
 function BellIcon({ hasUnread }: { hasUnread: boolean }) {
   return (
@@ -39,6 +46,7 @@ function timeAgo(iso: string): string {
 export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   const { data: count = 0, isError: countError } = useUnreadCount()
   const { data: notifications = [], isError: listError } = useNotifications()
@@ -57,6 +65,11 @@ export function NotificationBell() {
 
   function handleItemClick(n: NotificationItem) {
     if (!n.isRead) markOne.mutate(n.id)
+    const link = deepLinkFor(n)
+    if (link) {
+      setOpen(false)
+      navigate(link)
+    }
   }
 
   return (
