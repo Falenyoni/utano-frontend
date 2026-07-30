@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import { queryClient } from '@/app/queryClient'
 
 export interface User {
   userId: string
@@ -89,6 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function login(response: LoginResponse) {
     const { accessToken, refreshToken, expiresAt, ...userData } = response
+    // Wipe any cached data from a previous session in this tab (e.g. another user's
+    // notifications/patients/appointments) before it can be served as this user's data.
+    queryClient.clear()
     setUser(userData)
     localStorage.setItem(
       STORAGE_KEY,
@@ -98,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
+    queryClient.clear()
     setUser(null)
     clearStoredAuth()
     applyBrandingVars(null)
