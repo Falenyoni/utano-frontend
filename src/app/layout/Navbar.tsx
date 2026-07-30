@@ -232,12 +232,13 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 }
 
 function NotificationPreferencesModal({ onClose }: { onClose: () => void }) {
+  const { subscription } = useAuth()
   const { data, isLoading } = useNotificationPreferences()
   const updatePreferences = useUpdateNotificationPreferences()
+  const isProfessional = subscription?.tier === 'Professional'
 
   const [inAppEnabled, setInAppEnabled] = useState(true)
   const [emailEnabled, setEmailEnabled] = useState(false)
-  const [smsEnabled, setSmsEnabled] = useState(false)
   const [whatsAppEnabled, setWhatsAppEnabled] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -245,13 +246,13 @@ function NotificationPreferencesModal({ onClose }: { onClose: () => void }) {
     if (!data) return
     setInAppEnabled(data.inAppEnabled)
     setEmailEnabled(data.emailEnabled)
-    setSmsEnabled(data.smsEnabled)
     setWhatsAppEnabled(data.whatsAppEnabled)
   }, [data])
 
   async function handleSave() {
     setSaved(false)
-    await updatePreferences.mutateAsync({ inAppEnabled, emailEnabled, smsEnabled, whatsAppEnabled })
+    // SMS is dropped from scope - always send false so a stale true from before this change gets cleared.
+    await updatePreferences.mutateAsync({ inAppEnabled, emailEnabled, smsEnabled: false, whatsAppEnabled })
     setSaved(true)
   }
 
@@ -281,15 +282,8 @@ function NotificationPreferencesModal({ onClose }: { onClose: () => void }) {
               disabled
             />
             <PreferenceToggle
-              label="SMS"
-              description="Coming soon."
-              checked={smsEnabled}
-              onChange={setSmsEnabled}
-              disabled
-            />
-            <PreferenceToggle
               label="WhatsApp"
-              description="Coming soon."
+              description={isProfessional ? 'Coming soon.' : 'Professional plan feature - contact your administrator to upgrade.'}
               checked={whatsAppEnabled}
               onChange={setWhatsAppEnabled}
               disabled
