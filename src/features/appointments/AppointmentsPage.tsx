@@ -186,6 +186,10 @@ export function AppointmentsPage() {
           nowTime={nowTime}
           date={date}
           onAction={(appt) => {
+            if (appt.status === 'InProgress') {
+              if (canOpenVisit && appt.visitId) navigate(`/consultations/${appt.visitId}`)
+              return
+            }
             if (ACTIVE_STATUSES.includes(appt.status)) openReschedule(appt)
           }}
           onSlotClick={(doctorId, doctorName, slotDate, startTime, endTime) => {
@@ -225,24 +229,35 @@ export function AppointmentsPage() {
                   </span>
                   {ACTIVE_STATUSES.includes(appt.status) && (
                     <div className="flex gap-3">
-                      {(appt.status === 'Scheduled' || appt.status === 'Confirmed') && (
-                        <button onClick={() => checkInMutation.mutate(appt.id)} disabled={checkInMutation.isPending}
-                          className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium disabled:opacity-50">
-                          Check In
-                        </button>
+                      {appt.status === 'InProgress' ? (
+                        canOpenVisit && appt.visitId && (
+                          <button onClick={() => navigate(`/consultations/${appt.visitId}`)}
+                            className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline font-medium">
+                            Open
+                          </button>
+                        )
+                      ) : (
+                        <>
+                          {(appt.status === 'Scheduled' || appt.status === 'Confirmed') && (
+                            <button onClick={() => checkInMutation.mutate(appt.id)} disabled={checkInMutation.isPending}
+                              className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium disabled:opacity-50">
+                              Check In
+                            </button>
+                          )}
+                          {appt.status === 'CheckedIn' && canOpenVisit && (
+                            <button onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
+                              className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium">
+                              Open Visit
+                            </button>
+                          )}
+                          <button onClick={() => openReschedule(appt)}
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Reschedule</button>
+                          <button onClick={() => { setReassignId(appt.id); setReassignDoctorId('') }}
+                            className="text-xs text-purple-600 dark:text-purple-400 hover:underline">Reassign</button>
+                          <button onClick={() => setCancelId(appt.id)}
+                            className="text-xs text-red-500 dark:text-red-400 hover:underline">Cancel</button>
+                        </>
                       )}
-                      {appt.status !== 'InProgress' && canOpenVisit && (
-                        <button onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
-                          className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium">
-                          Open Visit
-                        </button>
-                      )}
-                      <button onClick={() => openReschedule(appt)}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Reschedule</button>
-                      <button onClick={() => { setReassignId(appt.id); setReassignDoctorId('') }}
-                        className="text-xs text-purple-600 dark:text-purple-400 hover:underline">Reassign</button>
-                      <button onClick={() => setCancelId(appt.id)}
-                        className="text-xs text-red-500 dark:text-red-400 hover:underline">Cancel</button>
                     </div>
                   )}
                 </div>
@@ -292,31 +307,42 @@ export function AppointmentsPage() {
                     <td className="px-4 py-2">
                       {ACTIVE_STATUSES.includes(appt.status) && (
                         <div className="flex items-center justify-end gap-3">
-                          {(appt.status === 'Scheduled' || appt.status === 'Confirmed') && (
-                            <button onClick={() => checkInMutation.mutate(appt.id)} disabled={checkInMutation.isPending}
-                              className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium disabled:opacity-50">
-                              Check In
-                            </button>
+                          {appt.status === 'InProgress' ? (
+                            canOpenVisit && appt.visitId && (
+                              <button onClick={() => navigate(`/consultations/${appt.visitId}`)}
+                                className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline font-medium">
+                                Open
+                              </button>
+                            )
+                          ) : (
+                            <>
+                              {(appt.status === 'Scheduled' || appt.status === 'Confirmed') && (
+                                <button onClick={() => checkInMutation.mutate(appt.id)} disabled={checkInMutation.isPending}
+                                  className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium disabled:opacity-50">
+                                  Check In
+                                </button>
+                              )}
+                              {appt.status === 'CheckedIn' && canOpenVisit && (
+                                <button onClick={() => navigate('/consultations/new', {
+                                  state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate }
+                                })} className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium">
+                                  Open Visit
+                                </button>
+                              )}
+                              <button onClick={() => openReschedule(appt)}
+                                className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                                Reschedule
+                              </button>
+                              <button onClick={() => { setReassignId(appt.id); setReassignDoctorId('') }}
+                                className="text-xs text-purple-600 dark:text-purple-400 hover:underline">
+                                Reassign
+                              </button>
+                              <button onClick={() => setCancelId(appt.id)}
+                                className="text-xs text-red-500 dark:text-red-400 hover:underline">
+                                Cancel
+                              </button>
+                            </>
                           )}
-                          {appt.status !== 'InProgress' && canOpenVisit && (
-                            <button onClick={() => navigate('/consultations/new', {
-                              state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate }
-                            })} className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium">
-                              Open Visit
-                            </button>
-                          )}
-                          <button onClick={() => openReschedule(appt)}
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
-                            Reschedule
-                          </button>
-                          <button onClick={() => { setReassignId(appt.id); setReassignDoctorId('') }}
-                            className="text-xs text-purple-600 dark:text-purple-400 hover:underline">
-                            Reassign
-                          </button>
-                          <button onClick={() => setCancelId(appt.id)}
-                            className="text-xs text-red-500 dark:text-red-400 hover:underline">
-                            Cancel
-                          </button>
                         </div>
                       )}
                     </td>

@@ -102,8 +102,8 @@ export function WaitingRoomPage() {
                       Open Visit
                     </button>
                   )}
-                  {appt.status === 'InProgress' && canOpenVisit && (
-                    <button onClick={() => navigate('/consultations')}
+                  {appt.status === 'InProgress' && canOpenVisit && appt.visitId && (
+                    <button onClick={() => navigate(`/consultations/${appt.visitId}`)}
                       className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline">
                       View Visit
                     </button>
@@ -171,9 +171,9 @@ export function WaitingRoomPage() {
                         Open Visit
                       </button>
                     )}
-                    {appt.status === 'InProgress' && canOpenVisit && (
+                    {appt.status === 'InProgress' && canOpenVisit && appt.visitId && (
                       <button
-                        onClick={() => navigate('/consultations')}
+                        onClick={() => navigate(`/consultations/${appt.visitId}`)}
                         className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline"
                       >
                         View Visit
