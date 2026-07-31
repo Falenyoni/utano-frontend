@@ -275,6 +275,12 @@ export function RolesPage() {
             <h4 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
               Edit — {editRole.name}
             </h4>
+            {editRole.isSystem && (
+              <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg px-3 py-2">
+                This is a system role. Its name and permissions are managed by the platform and
+                can't be edited here — only the description and active status can change.
+              </p>
+            )}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -282,8 +288,9 @@ export function RolesPage() {
                 </label>
                 <input
                   value={editForm.name}
+                  disabled={editRole.isSystem}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -302,12 +309,18 @@ export function RolesPage() {
                 </label>
                 <select
                   value={editForm.isActive ? 'active' : 'inactive'}
+                  disabled={editRole.isSystem && editRole.name === 'Admin'}
                   onChange={(e) => setEditForm({ ...editForm, isActive: e.target.value === 'active' })}
-                  className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
+                {editRole.isSystem && editRole.name === 'Admin' && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    The Admin role can't be deactivated.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -317,6 +330,7 @@ export function RolesPage() {
                   allPermissions={allPermissions}
                   selected={editForm.permissions}
                   onChange={(keys) => setEditForm({ ...editForm, permissions: keys })}
+                  readOnly={editRole.isSystem}
                 />
               </div>
             </div>
