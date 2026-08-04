@@ -87,9 +87,16 @@ export function WaitingRoomPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400">{appt.doctorName}</p>
                   </div>
                 </div>
-                <span className={`text-xs px-2 py-0.5 rounded font-medium shrink-0 ${STATUS_BADGE[appt.status] ?? ''}`}>
-                  {STATUS_LABEL[appt.status] ?? appt.status}
-                </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  {appt.isOverdue && (
+                    <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
+                      Overdue
+                    </span>
+                  )}
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${STATUS_BADGE[appt.status] ?? ''}`}>
+                    {STATUS_LABEL[appt.status] ?? appt.status}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400 dark:text-gray-500">{waitingSince(appt.createdAt)}</span>
@@ -149,9 +156,16 @@ export function WaitingRoomPage() {
                     <p className="text-xs text-gray-400 dark:text-gray-500">{waitingSince(appt.createdAt)}</p>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-block text-xs px-2 py-0.5 rounded font-medium ${STATUS_BADGE[appt.status] ?? ''}`}>
-                      {STATUS_LABEL[appt.status] ?? appt.status}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {appt.isOverdue && (
+                        <span className="text-xs px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 whitespace-nowrap">
+                          Overdue
+                        </span>
+                      )}
+                      <span className={`inline-block text-xs px-2 py-0.5 rounded font-medium ${STATUS_BADGE[appt.status] ?? ''}`}>
+                        {STATUS_LABEL[appt.status] ?? appt.status}
+                      </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-right">
                     {appt.status === 'CheckedIn' && canOpenVisit && (

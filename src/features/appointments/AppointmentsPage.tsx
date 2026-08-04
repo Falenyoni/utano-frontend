@@ -28,14 +28,6 @@ function nowHHMM() {
   return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 }
 
-function isOverdue(appt: AppointmentSummary, today: string, nowTime: string) {
-  return (
-    appt.appointmentDate === today &&
-    appt.endTime.slice(0, 5) < nowTime &&
-    ['Scheduled', 'Confirmed', 'CheckedIn'].includes(appt.status)
-  )
-}
-
 export function AppointmentsPage() {
   const navigate = useNavigate()
   const [date, setDate] = useState(todayISO())
@@ -204,7 +196,7 @@ export function AppointmentsPage() {
       {view === 'list' && appointments.length > 0 && (
         <div className="sm:hidden space-y-2">
           {appointments.map((appt) => {
-            const overdue = isOverdue(appt, today, nowTime)
+            const overdue = appt.isOverdue
             return (
               <div key={appt.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 px-4 py-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -283,7 +275,7 @@ export function AppointmentsPage() {
             </thead>
             <tbody>
               {appointments.map((appt) => {
-                const overdue = isOverdue(appt, today, nowTime)
+                const overdue = appt.isOverdue
                 return (
                   <tr key={appt.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">

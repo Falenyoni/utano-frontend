@@ -16,6 +16,7 @@ export interface AppointmentSummary {
   visitId: string | null
   patientGender: string | null
   patientDateOfBirth: string | null
+  isOverdue: boolean
 }
 
 export interface AppointmentDetail extends AppointmentSummary {

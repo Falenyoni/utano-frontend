@@ -54,14 +54,6 @@ function heightPx(durationMins: number): number {
   return Math.max((durationMins / 30) * SLOT_PX, SLOT_PX * 0.75)
 }
 
-function isOverdue(appt: AppointmentSummary, today: string, nowHHMM: string): boolean {
-  return (
-    appt.appointmentDate === today &&
-    toMinutes(appt.endTime) <= toMinutes(nowHHMM) &&
-    ['Scheduled', 'Confirmed', 'CheckedIn'].includes(appt.status)
-  )
-}
-
 // Build the hour/half-hour labels for the left column
 const TIME_LABELS: { label: string; slot: number }[] = []
 for (let h = GRID_START_H; h <= GRID_END_H; h++) {
@@ -234,7 +226,7 @@ export function DayGridView({ appointments, doctors, today, nowTime, date, onAct
                 const endMins   = toMinutes(appt.endTime)
                 const top    = topPx(startMins)
                 const height = heightPx(endMins - startMins)
-                const overdue = isOverdue(appt, today, nowTime)
+                const overdue = appt.isOverdue
                 const colorCls = STATUS_COLORS[appt.status] ?? 'bg-gray-100 border-gray-300 text-gray-700'
 
                 return (

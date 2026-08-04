@@ -67,11 +67,6 @@ function BarChart({ data }: { data: { label: string; value: number; color: strin
   )
 }
 
-function currentTimeStr() {
-  const now = new Date()
-  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:00`
-}
-
 export function DashboardPage() {
   const today = todayISO()
 
@@ -106,13 +101,8 @@ export function DashboardPage() {
       color: STATUS_COLORS[s],
     }))
 
-  // Overdue: today's appointments past end time, not yet closed
-  const nowStr = currentTimeStr()
-  const overdueCount = (todayAppts?.data ?? []).filter(
-    (a) =>
-      ['Scheduled', 'Confirmed', 'CheckedIn'].includes(a.status) &&
-      a.endTime.slice(0, 8) < nowStr,
-  ).length
+  // Overdue: backend-computed, covers today's (and any stale) appointments past end time, not yet closed
+  const overdueCount = (todayAppts?.data ?? []).filter((a) => a.isOverdue).length
   const noShowCount = statusCounts['NoShow'] ?? 0
 
   // Doctor workload from today's appointments
@@ -122,7 +112,7 @@ export function DashboardPage() {
     entry.total++
     if (appt.status === 'Completed') entry.completed++
     if (appt.status === 'InProgress') entry.inProgress++
-    if (['Scheduled', 'Confirmed', 'CheckedIn'].includes(appt.status) && appt.endTime.slice(0, 8) < nowStr) entry.overdue++
+    if (appt.isOverdue) entry.overdue++
     doctorMap.set(appt.doctorId, entry)
   }
   const doctorStats = Array.from(doctorMap.values()).sort((a, b) => b.total - a.total)
