@@ -167,21 +167,21 @@ export function DashboardPage() {
           label="No Shows"
           value={noShowCount}
           sub="Today"
-          to="/appointments"
+          to="/appointments?status=NoShow"
           color={noShowCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}
         />
         <StatCard
           label="Outstanding Invoices"
           value={outstandingInvoices?.totalCount}
           sub="Issued, awaiting payment"
-          to="/billing"
+          to="/billing?outstanding=1"
           color={(outstandingInvoices?.totalCount ?? 0) > 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-gray-100'}
         />
         <StatCard
           label="Low Stock Items"
           value={lowStock?.totalCount}
           sub="Below reorder level"
-          to="/inventory"
+          to="/inventory?lowStock=1"
           color={(lowStock?.totalCount ?? 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'}
         />
       </div>

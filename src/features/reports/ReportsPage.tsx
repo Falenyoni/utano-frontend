@@ -4,7 +4,6 @@ import { Link } from 'react-router'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { getInvoices, getRevenueSummary, getVisitsByDoctor, getVisitDemographics } from '@/features/billing/billingApi'
-import { getStockItems } from '@/features/inventory/inventoryApi'
 
 function fmt(n: number) {
   return `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -539,89 +538,6 @@ function DemographicsReport() {
   )
 }
 
-// ── Low Stock Alert ──────────────────────────────────────────────────────────
-
-function LowStockReport() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['report-low-stock'],
-    queryFn: () => getStockItems({ lowStockOnly: true, activeOnly: true, pageSize: 100 }),
-  })
-
-  const items = data?.data ?? []
-
-  function exportPdf() {
-    if (!items.length) return
-    const doc = new jsPDF()
-    doc.setFontSize(16)
-    doc.text('Low Stock Alert', 14, 18)
-    doc.setFontSize(9)
-    doc.setTextColor(120)
-    doc.text(`${items.length} items below reorder level · ${today()}`, 14, 26)
-    doc.setTextColor(0)
-
-    autoTable(doc, {
-      startY: 32,
-      head: [['Item', 'Category', 'On Hand', 'Reorder Level']],
-      body: items.map((item) => [
-        item.name,
-        item.category,
-        `${item.quantityOnHand} ${item.unit}`,
-        `${item.reorderLevel} ${item.unit}`,
-      ]),
-      columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } },
-      styles: { fontSize: 9 },
-    })
-
-    doc.save(`low-stock-${today()}.pdf`)
-  }
-
-  return (
-    <div className="space-y-3">
-      {!isLoading && (
-        <div className="flex justify-end">
-          <ExportButton onClick={exportPdf} disabled={items.length === 0} />
-        </div>
-      )}
-      {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
-      {!isLoading && items.length === 0 && (
-        <p className="text-sm text-green-600 dark:text-green-400">All stock levels are healthy.</p>
-      )}
-      {items.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                <th className="pb-1 font-medium pr-4">Item</th>
-                <th className="pb-1 font-medium pr-4">Category</th>
-                <th className="pb-1 font-medium text-right pr-4">On Hand</th>
-                <th className="pb-1 font-medium text-right">Reorder Level</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                  <td className="py-1.5 pr-4">
-                    <Link to={`/inventory/${item.id}`} className="text-blue-600 dark:text-blue-400 hover:underline">
-                      {item.name}
-                    </Link>
-                  </td>
-                  <td className="py-1.5 pr-4 text-gray-500 dark:text-gray-400">{item.category}</td>
-                  <td className="py-1.5 pr-4 text-right text-red-600 dark:text-red-400 font-medium">
-                    {item.quantityOnHand} {item.unit}
-                  </td>
-                  <td className="py-1.5 text-right text-gray-500 dark:text-gray-400">
-                    {item.reorderLevel} {item.unit}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 const REPORTS = [
@@ -629,7 +545,6 @@ const REPORTS = [
   { id: 'outstanding', label: 'Outstanding Balances', component: <OutstandingReport /> },
   { id: 'visits-doctor', label: 'Visits by Doctor', component: <VisitsByDoctorReport /> },
   { id: 'demographics', label: 'Patient Demographics', component: <DemographicsReport /> },
-  { id: 'low-stock', label: 'Low Stock Alert', component: <LowStockReport /> },
 ]
 
 export function ReportsPage() {

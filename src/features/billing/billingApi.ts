@@ -93,7 +93,7 @@ export async function getInvoices(params: {
   patientName?: string; status?: string
   dateFrom?: string; dateTo?: string; page?: number; pageSize?: number
   hasMedicalAid?: boolean; medAidClaimStatus?: string; outstanding?: boolean
-  visitId?: string
+  visitId?: string; medicalAidId?: string
 }): Promise<PagedInvoices> {
   const q = new URLSearchParams()
   if (params.patientName) q.set('patientName', params.patientName)
@@ -104,6 +104,7 @@ export async function getInvoices(params: {
   if (params.medAidClaimStatus) q.set('medAidClaimStatus', params.medAidClaimStatus)
   if (params.outstanding) q.set('outstanding', 'true')
   if (params.visitId) q.set('visitId', params.visitId)
+  if (params.medicalAidId) q.set('medicalAidId', params.medicalAidId)
   q.set('page', String(params.page ?? 1))
   q.set('pageSize', String(params.pageSize ?? 20))
   const res = await apiFetch(`/api/billing/invoices?${q}`, { method: 'GET' })

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { getInvoices, submitClaim, updateClaimStatus } from '@/features/billing/billingApi'
+import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
 
 const CLAIM_STATUS_COLORS: Record<string, string> = {
   None: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400',
@@ -92,16 +93,24 @@ export function ClaimsPage() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState('All')
   const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [medicalAidId, setMedicalAidId] = useState('')
   const [page, setPage] = useState(1)
   const [submitting, setSubmitting] = useState<{ id: string; total: number } | null>(null)
 
+  const { data: medicalAids } = useMedicalAids()
+
   const { data, isLoading } = useQuery({
-    queryKey: ['claims', statusFilter, search, page],
+    queryKey: ['claims', statusFilter, search, dateFrom, dateTo, medicalAidId, page],
     queryFn: () =>
       getInvoices({
         hasMedicalAid: true,
         medAidClaimStatus: statusFilter === 'All' ? undefined : statusFilter,
         patientName: search || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        medicalAidId: medicalAidId || undefined,
         page,
         pageSize: 20,
       }),
@@ -134,6 +143,26 @@ export function ClaimsPage() {
           placeholder="Search patient..."
           className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-blue-300"
         />
+        <select
+          value={medicalAidId}
+          onChange={(e) => { setMedicalAidId(e.target.value); setPage(1) }}
+          className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+        >
+          <option value="">All Schemes</option>
+          {medicalAids?.map((aid) => <option key={aid.id} value={aid.id}>{aid.name}</option>)}
+        </select>
+        <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
+          className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+        <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
+          className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300" />
+        {(dateFrom || dateTo || medicalAidId) && (
+          <button
+            onClick={() => { setDateFrom(''); setDateTo(''); setMedicalAidId(''); setPage(1) }}
+            className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 px-2"
+          >
+            Clear
+          </button>
+        )}
         <div className="flex gap-1">
           {CLAIM_STATUS_FILTERS.map((s) => (
             <button

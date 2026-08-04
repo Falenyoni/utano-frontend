@@ -17,6 +17,7 @@ const STATUS_COLORS: Record<string, string> = {
 }
 
 const ACTIVE_STATUSES = ['Scheduled', 'Confirmed', 'CheckedIn', 'InProgress']
+const ALL_STATUSES = ['Scheduled', 'Confirmed', 'CheckedIn', 'InProgress', 'Completed', 'Cancelled', 'NoShow']
 type ViewMode = 'list' | 'grid'
 
 function todayISO() {
@@ -33,6 +34,7 @@ export function AppointmentsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const onlyOverdue = searchParams.get('overdue') === '1'
   const [date, setDate] = useState(todayISO())
+  const [status, setStatus] = useState(searchParams.get('status') ?? '')
   const [page, setPage] = useState(1)
   const [view, setView] = useState<ViewMode>('list')
 
@@ -65,9 +67,9 @@ export function AppointmentsPage() {
 
   // For grid view, fetch all appointments without pagination
   const listParams = onlyOverdue
-    ? { onlyOverdue: true, page, pageSize: 20 }
-    : { date, page, pageSize: 20 }
-  const gridParams = { date, page: 1, pageSize: 200 }
+    ? { onlyOverdue: true, status: status || undefined, page, pageSize: 20 }
+    : { date, status: status || undefined, page, pageSize: 20 }
+  const gridParams = { date, status: status || undefined, page: 1, pageSize: 200 }
   const effectiveView: ViewMode = onlyOverdue ? 'list' : view
   const { data, isLoading, error } = useAppointments(effectiveView === 'grid' ? gridParams : listParams)
   const { data: doctorsData } = useDoctors()
@@ -164,6 +166,22 @@ export function AppointmentsPage() {
             onChange={(e) => { setDate(e.target.value); setPage(1) }}
             className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
           />
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value)
+              setPage(1)
+              setSearchParams((prev) => {
+                const next = new URLSearchParams(prev)
+                if (e.target.value) next.set('status', e.target.value); else next.delete('status')
+                return next
+              })
+            }}
+            className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
+          >
+            <option value="">All Statuses</option>
+            {ALL_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
 
           {/* View switcher */}
           <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">

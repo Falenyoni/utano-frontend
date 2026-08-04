@@ -1,10 +1,42 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useQueryClient } from '@tanstack/react-query'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { useAddStockItem, useAdjustStock, useReceiveStock, useStockItems, useUpdateStockItem } from './useInventory'
-import type { AddStockItemRequest, StockItemSummary } from './inventoryApi'
+import { getStockItems, type AddStockItemRequest, type StockItemSummary } from './inventoryApi'
 import { InventoryImportModal } from './InventoryImportModal'
 import { useAuth } from '@/shared/lib/auth/AuthContext'
+
+function today() {
+  return new Date().toISOString().split('T')[0]
+}
+
+function exportLowStockPdf(items: StockItemSummary[]) {
+  if (!items.length) return
+  const doc = new jsPDF()
+  doc.setFontSize(16)
+  doc.text('Low Stock Alert', 14, 18)
+  doc.setFontSize(9)
+  doc.setTextColor(120)
+  doc.text(`${items.length} items below reorder level · ${today()}`, 14, 26)
+  doc.setTextColor(0)
+
+  autoTable(doc, {
+    startY: 32,
+    head: [['Item', 'Category', 'On Hand', 'Reorder Level']],
+    body: items.map((item) => [
+      item.name,
+      item.category,
+      `${item.quantityOnHand} ${item.unit}`,
+      `${item.reorderLevel} ${item.unit}`,
+    ]),
+    columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' } },
+    styles: { fontSize: 9 },
+  })
+
+  doc.save(`low-stock-${today()}.pdf`)
+}
 
 const CATEGORIES = ['Medication', 'Consumable', 'Equipment', 'Laboratory', 'Other']
 
@@ -31,9 +63,10 @@ const blankItem: AddStockItemRequest = {
 export function InventoryPage() {
   const { hasPermission } = useAuth()
   const canManage = hasPermission('inventory.manage')
+  const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
-  const [lowStockOnly, setLowStockOnly] = useState(false)
+  const [lowStockOnly, setLowStockOnly] = useState(searchParams.get('lowStock') === '1')
   const [page, setPage] = useState(1)
   const [showAdd, setShowAdd] = useState(false)
   const [showImport, setShowImport] = useState(false)
@@ -61,6 +94,17 @@ export function InventoryPage() {
 
   const items = data?.data ?? []
   const lowStockCount = items.filter((i) => i.isLowStock).length
+
+  const [exportingLowStock, setExportingLowStock] = useState(false)
+  async function handleExportLowStock() {
+    setExportingLowStock(true)
+    try {
+      const result = await getStockItems({ lowStockOnly: true, activeOnly: true, pageSize: 100 })
+      exportLowStockPdf(result.data)
+    } finally {
+      setExportingLowStock(false)
+    }
+  }
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault()
@@ -167,6 +211,15 @@ export function InventoryPage() {
             className="rounded border-gray-300 dark:border-gray-600" />
           Low stock only
         </label>
+        {lowStockOnly && (
+          <button
+            onClick={handleExportLowStock}
+            disabled={exportingLowStock}
+            className="text-sm border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 rounded-lg px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+          >
+            {exportingLowStock ? 'Exporting...' : '↓ Export PDF'}
+          </button>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router'
 import { useInvoices, useCreateInvoice } from './useBilling'
 import { getPatients, getPatientById } from '@/features/patients/patientsApi'
 import { useMedicalAids } from '@/features/medicalAids/useMedicalAids'
@@ -18,6 +19,32 @@ const statusColor: Record<string, string> = {
 function formatCurrency(v: number) {
   return new Intl.NumberFormat('en-ZW', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(v)
 }
+
+function todayISO() {
+  return new Date().toISOString().split('T')[0]
+}
+
+function firstOfMonth(offsetMonths = 0) {
+  const d = new Date()
+  d.setMonth(d.getMonth() + offsetMonths, 1)
+  return d.toISOString().split('T')[0]
+}
+
+function lastDayOfPrevMonth() {
+  const d = new Date()
+  d.setDate(0)
+  return d.toISOString().split('T')[0]
+}
+
+function firstOfYear() {
+  return `${new Date().getFullYear()}-01-01`
+}
+
+const DATE_PRESETS: { label: string; from: () => string; to: () => string }[] = [
+  { label: 'This Month', from: () => firstOfMonth(0), to: todayISO },
+  { label: 'Last Month', from: () => firstOfMonth(-1), to: lastDayOfPrevMonth },
+  { label: 'This Year', from: firstOfYear, to: todayISO },
+]
 
 const inputCls =
   'border border-gray-300 dark:border-gray-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-300'
@@ -156,6 +183,8 @@ function NewInvoiceModal({ onClose, onCreated }: { onClose: () => void; onCreate
 }
 
 export function BillingPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const outstandingOnly = searchParams.get('outstanding') === '1'
   const [patientName, setPatientName] = useState('')
   const [status, setStatus] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -164,8 +193,17 @@ export function BillingPage() {
   const [showNewInvoice, setShowNewInvoice] = useState(false)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null)
 
+  function clearOutstandingFilter() {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete('outstanding')
+      return next
+    })
+    setPage(1)
+  }
+
   const { hasPermission } = useAuth()
-  const { data, isLoading } = useInvoices({ patientName, status, dateFrom, dateTo, page, pageSize: 20 })
+  const { data, isLoading } = useInvoices({ patientName, status, dateFrom, dateTo, outstanding: outstandingOnly, page, pageSize: 20 })
   const invoices = data?.data ?? []
 
   const totalOutstanding = invoices.reduce(
@@ -204,6 +242,18 @@ export function BillingPage() {
         </div>
       </div>
 
+      {outstandingOnly && (
+        <div className="flex items-center gap-3 flex-wrap bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-900 rounded-md px-4 py-2.5">
+          <span className="text-sm text-yellow-800 dark:text-yellow-300">Showing outstanding invoices only</span>
+          <button
+            onClick={clearOutstandingFilter}
+            className="text-sm text-yellow-700 dark:text-yellow-400 underline hover:no-underline ml-auto"
+          >
+            Clear filter
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-3">
         <input
           type="text"
@@ -224,6 +274,17 @@ export function BillingPage() {
           className={inputCls} />
         <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
           className={inputCls} />
+        <div className="flex gap-1.5">
+          {DATE_PRESETS.map((preset) => (
+            <button
+              key={preset.label}
+              onClick={() => { setDateFrom(preset.from()); setDateTo(preset.to()); setPage(1) }}
+              className="text-xs px-2.5 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
         {(patientName || status || dateFrom || dateTo) && (
           <button
             onClick={() => { setPatientName(''); setStatus(''); setDateFrom(''); setDateTo(''); setPage(1) }}
