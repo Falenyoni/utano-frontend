@@ -2,7 +2,6 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { useVisits } from './useVisits'
 import { getPatients } from '@/features/patients/patientsApi'
-import { useAuth } from '@/shared/lib/auth/AuthContext'
 
 function todayISO() {
   return new Date().toISOString().split('T')[0]
@@ -16,8 +15,6 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function ConsultationsPage() {
   const navigate = useNavigate()
-  const { hasPermission } = useAuth()
-  const canOpenVisit = hasPermission('clinical_notes.create')
 
   const [date, setDate] = useState(todayISO())
   const [patientId, setPatientId] = useState('')
@@ -61,21 +58,11 @@ export function ConsultationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Consultations</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {data ? `${data.totalCount} visit${data.totalCount !== 1 ? 's' : ''}` : 'Loading...'}
-          </p>
-        </div>
-        {canOpenVisit && (
-          <button
-            onClick={() => navigate('/consultations/new')}
-            className="bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 whitespace-nowrap"
-          >
-            + Open Visit
-          </button>
-        )}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Consultations</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          {data ? `${data.totalCount} visit${data.totalCount !== 1 ? 's' : ''}` : 'Loading...'}
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-3 items-end">
