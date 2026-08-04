@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { useInvoice, useAddLineItem, useRemoveLineItem, useIssueInvoice, useVoidInvoice, useRecordPayment, useCreatePaymentPlan } from './useBilling'
+import { useAuth } from '@/shared/lib/auth/AuthContext'
 import type { InstallmentRow } from './billingApi'
 
 const PAYMENT_METHODS = ['Cash', 'EcoCash', 'ZIPIT', 'ZimSwitch', 'Card', 'MedicalAid', 'BankTransfer']
@@ -39,6 +40,8 @@ const inputCls =
 
 export default function InvoiceDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const { hasPermission } = useAuth()
+  const canViewVisit = hasPermission('clinical_notes.view')
   const { data: invoice, isLoading } = useInvoice(id!)
 
   const addLineItem = useAddLineItem(id!)
@@ -217,6 +220,12 @@ export default function InvoiceDetailPage() {
             </span>
             <span className="text-sm text-gray-500 dark:text-gray-400">{invoice.patientName}</span>
             {invoice.doctorName && <span className="text-sm text-gray-400 dark:text-gray-500">· {invoice.doctorName}</span>}
+            {invoice.visitId && canViewVisit && (
+              <Link to={`/consultations/${invoice.visitId}`}
+                className="text-xs px-2 py-0.5 rounded-full font-medium bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800">
+                From Visit →
+              </Link>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

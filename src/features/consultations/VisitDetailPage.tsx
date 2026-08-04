@@ -6,6 +6,7 @@ import { useStockItems } from '@/features/inventory/useInventory'
 import { useDoctors } from '@/features/appointments/useAppointments'
 import { useAuth } from '@/shared/lib/auth/AuthContext'
 import { useCreateNotification } from '@/features/notifications/useNotifications'
+import { useInvoices } from '@/features/billing/useBilling'
 import type { TriageVisitRequest, UpdateVisitRequest, VisitDetail } from './visitsApi'
 import { SpecialtyFields } from '@/shared/components/SpecialtyFields'
 import { SPECIALTIES } from '@/shared/constants/specialties'
@@ -369,6 +370,51 @@ function AddPrescriptionModal({ visitId, onClose }: { visitId: string; onClose: 
   )
 }
 
+const invoiceStatusColors: Record<string, string> = {
+  Draft: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+  Issued: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  PartiallyPaid: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300',
+  Paid: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  Void: 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400',
+}
+
+function VisitInvoiceSection({ visitId, isCompleted }: { visitId: string; isCompleted: boolean }) {
+  const navigate = useNavigate()
+  const { data, isLoading } = useInvoices({ visitId, pageSize: 1 })
+  const invoice = data?.data?.[0]
+
+  return (
+    <section className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-5 space-y-3">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Billing</h3>
+      {isLoading && <p className="text-sm text-gray-400">Loading...</p>}
+      {!isLoading && !invoice && (
+        <p className="text-sm text-gray-400">
+          {isCompleted ? 'No invoice was created for this visit.' : 'An invoice will be created automatically once billable items are added or the visit is completed.'}
+        </p>
+      )}
+      {invoice && (
+        <button
+          onClick={() => navigate(`/billing/${invoice.id}`)}
+          className="w-full flex items-center justify-between gap-3 p-3 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 transition-colors text-left"
+        >
+          <div>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{invoice.invoiceNumber}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Auto-created from this visit</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              {invoice.currency} {invoice.totalAmount.toFixed(2)}
+            </p>
+            <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${invoiceStatusColors[invoice.status] ?? ''}`}>
+              {invoice.status}
+            </span>
+          </div>
+        </button>
+      )}
+    </section>
+  )
+}
+
 function PrescriptionsSection({ visitId, isCompleted }: { visitId: string; isCompleted: boolean }) {
   const [showAdd, setShowAdd] = useState(false)
   const { data: prescriptions, isLoading } = usePrescriptions(visitId)
@@ -447,6 +493,7 @@ export function VisitDetailPage() {
   const canReferOrViewHistory = hasPermission('patients.refer')
   const canTriage = hasPermission('triage.create')
   const canEditClinical = hasPermission('clinical_notes.edit')
+  const canViewBilling = hasPermission('billing.view')
 
   const [editingTriage, setEditingTriage] = useState(false)
   const [triageForm, setTriageForm] = useState<TriageVisitRequest>({
@@ -758,6 +805,9 @@ export function VisitDetailPage() {
 
       {/* Prescriptions */}
       {canEditClinical && <PrescriptionsSection visitId={id!} isCompleted={isCompleted} />}
+
+      {/* Billing */}
+      {canViewBilling && <VisitInvoiceSection visitId={id!} isCompleted={isCompleted} />}
 
       {/* Documents & Files (coming soon) */}
       {canEditClinical && <FilesSection />}
