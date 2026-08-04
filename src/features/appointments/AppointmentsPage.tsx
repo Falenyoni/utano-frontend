@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { useAppointments, useCancelAppointment, useCheckInAppointment, useRescheduleAppointment, useReassignAppointment, useDoctors } from './useAppointments'
 import { ImportAppointmentsModal } from './ImportAppointmentsModal'
 import { DayGridView } from './DayGridView'
@@ -30,9 +30,20 @@ function nowHHMM() {
 
 export function AppointmentsPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const onlyOverdue = searchParams.get('overdue') === '1'
   const [date, setDate] = useState(todayISO())
   const [page, setPage] = useState(1)
   const [view, setView] = useState<ViewMode>('list')
+
+  function clearOverdueFilter() {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete('overdue')
+      return next
+    })
+    setPage(1)
+  }
 
   const [showImport, setShowImport] = useState(false)
   const [cancelId, setCancelId] = useState<string | null>(null)
@@ -53,9 +64,12 @@ export function AppointmentsPage() {
   const nowTime = nowHHMM()
 
   // For grid view, fetch all appointments without pagination
-  const listParams = { date, page, pageSize: 20 }
+  const listParams = onlyOverdue
+    ? { onlyOverdue: true, page, pageSize: 20 }
+    : { date, page, pageSize: 20 }
   const gridParams = { date, page: 1, pageSize: 200 }
-  const { data, isLoading, error } = useAppointments(view === 'grid' ? gridParams : listParams)
+  const effectiveView: ViewMode = onlyOverdue ? 'list' : view
+  const { data, isLoading, error } = useAppointments(effectiveView === 'grid' ? gridParams : listParams)
   const { data: doctorsData } = useDoctors()
 
   const cancelMutation = useCancelAppointment()
@@ -130,47 +144,63 @@ export function AppointmentsPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => { setDate(e.target.value); setPage(1) }}
-          className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
-        />
-
-        {/* View switcher */}
-        <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">
+      {onlyOverdue ? (
+        <div className="flex items-center gap-3 flex-wrap bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-900 rounded-md px-4 py-2.5">
+          <span className="text-sm text-orange-800 dark:text-orange-300">
+            Showing overdue appointments across all dates
+          </span>
           <button
-            onClick={() => setView('list')}
-            className={`px-3 py-1.5 font-medium transition-colors ${
-              view === 'list'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-            }`}
+            onClick={clearOverdueFilter}
+            className="text-sm text-orange-700 dark:text-orange-400 underline hover:no-underline ml-auto"
           >
-            List
-          </button>
-          <button
-            onClick={() => setView('grid')}
-            className={`px-3 py-1.5 font-medium border-l border-gray-300 dark:border-gray-700 transition-colors ${
-              view === 'grid'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-            }`}
-          >
-            Grid
+            Clear filter
           </button>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-center gap-3 flex-wrap">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => { setDate(e.target.value); setPage(1) }}
+            className="rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 px-3 py-2 text-sm"
+          />
+
+          {/* View switcher */}
+          <div className="flex rounded-md border border-gray-300 dark:border-gray-700 overflow-hidden text-sm">
+            <button
+              onClick={() => setView('list')}
+              className={`px-3 py-1.5 font-medium transition-colors ${
+                view === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              List
+            </button>
+            <button
+              onClick={() => setView('grid')}
+              className={`px-3 py-1.5 font-medium border-l border-gray-300 dark:border-gray-700 transition-colors ${
+                view === 'grid'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+              }`}
+            >
+              Grid
+            </button>
+          </div>
+        </div>
+      )}
 
       {isLoading && <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>}
       {error && <div className="text-sm text-red-600 dark:text-red-400">Failed to load appointments.</div>}
       {data && data.data.length === 0 && (
-        <div className="text-sm text-gray-400 dark:text-gray-500">No appointments for this date.</div>
+        <div className="text-sm text-gray-400 dark:text-gray-500">
+          {onlyOverdue ? 'No overdue appointments.' : 'No appointments for this date.'}
+        </div>
       )}
 
       {/* Grid view */}
-      {view === 'grid' && (
+      {effectiveView === 'grid' && (
         <DayGridView
           appointments={appointments}
           doctors={(doctorsData ?? []).map((d) => ({ id: d.id, name: d.fullName }))}
@@ -193,7 +223,7 @@ export function AppointmentsPage() {
       )}
 
       {/* List view — mobile cards */}
-      {view === 'list' && appointments.length > 0 && (
+      {effectiveView === 'list' && appointments.length > 0 && (
         <div className="sm:hidden space-y-2">
           {appointments.map((appt) => {
             const overdue = appt.isOverdue
@@ -217,6 +247,7 @@ export function AppointmentsPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500 dark:text-gray-400">
+                    {onlyOverdue && <span className="font-medium">{appt.appointmentDate} · </span>}
                     {appt.startTime.slice(0, 5)} – {appt.endTime.slice(0, 5)}
                   </span>
                   {ACTIVE_STATUSES.includes(appt.status) && (
@@ -260,11 +291,12 @@ export function AppointmentsPage() {
       )}
 
       {/* List view — desktop table */}
-      {view === 'list' && appointments.length > 0 && (
+      {effectiveView === 'list' && appointments.length > 0 && (
         <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <tr>
+                {onlyOverdue && <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Date</th>}
                 <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Time</th>
                 <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Patient</th>
                 <th className="text-left px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Doctor</th>
@@ -278,6 +310,9 @@ export function AppointmentsPage() {
                 const overdue = appt.isOverdue
                 return (
                   <tr key={appt.id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                    {onlyOverdue && (
+                      <td className="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">{appt.appointmentDate}</td>
+                    )}
                     <td className="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">
                       {appt.startTime.slice(0, 5)} – {appt.endTime.slice(0, 5)}
                     </td>
@@ -347,7 +382,7 @@ export function AppointmentsPage() {
       )}
 
       {/* Pagination (list view only) */}
-      {view === 'list' && data && data.totalPages > 1 && (
+      {effectiveView === 'list' && data && data.totalPages > 1 && (
         <div className="flex items-center gap-3">
           <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={!data.hasPreviousPage}
             className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-md disabled:opacity-40 disabled:cursor-not-allowed">

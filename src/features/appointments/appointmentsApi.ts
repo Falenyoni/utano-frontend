@@ -40,6 +40,7 @@ export interface GetAppointmentsParams {
   patientId?: string
   doctorId?: string
   status?: string
+  onlyOverdue?: boolean
   page?: number
   pageSize?: number
 }
@@ -75,6 +76,7 @@ export async function getAppointments(params: GetAppointmentsParams): Promise<Pa
   if (params.patientId) query.set('patientId', params.patientId)
   if (params.doctorId) query.set('doctorId', params.doctorId)
   if (params.status) query.set('status', params.status)
+  if (params.onlyOverdue) query.set('onlyOverdue', 'true')
   query.set('page', String(params.page ?? 1))
   query.set('pageSize', String(params.pageSize ?? 20))
 

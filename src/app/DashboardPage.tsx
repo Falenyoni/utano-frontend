@@ -73,6 +73,7 @@ export function DashboardPage() {
   const { data: totalPatients } = usePatients({ page: 1, pageSize: 1 })
   const { data: activePatients } = usePatients({ page: 1, pageSize: 1, status: 'Active' })
   const { data: todayAppts } = useAppointments({ date: today, pageSize: 200 })
+  const { data: overdueAppts } = useAppointments({ onlyOverdue: true, pageSize: 1 })
   const { data: waitingAppts } = useAppointments({ date: today, status: 'Scheduled', pageSize: 1 })
   const { data: inProgressAppts } = useAppointments({ date: today, status: 'InProgress', pageSize: 1 })
   const { data: todayVisits } = useVisits({ date: today, pageSize: 5 })
@@ -101,8 +102,8 @@ export function DashboardPage() {
       color: STATUS_COLORS[s],
     }))
 
-  // Overdue: backend-computed, covers today's (and any stale) appointments past end time, not yet closed
-  const overdueCount = (todayAppts?.data ?? []).filter((a) => a.isOverdue).length
+  // Overdue: backend-computed, practice-wide across all dates (not just today)
+  const overdueCount = overdueAppts?.totalCount ?? 0
   const noShowCount = statusCounts['NoShow'] ?? 0
 
   // Doctor workload from today's appointments
@@ -158,8 +159,8 @@ export function DashboardPage() {
         <StatCard
           label="Overdue"
           value={overdueCount}
-          sub="Scheduled but time has passed"
-          to="/appointments"
+          sub="Across all dates"
+          to="/appointments?overdue=1"
           color={overdueCount > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-gray-100'}
         />
         <StatCard
