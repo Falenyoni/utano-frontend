@@ -5,7 +5,7 @@ import { getRevenueSummary, getVisitsByDoctor } from '../billing/billingApi'
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmt(n: number) {
-  return n.toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  return n.toLocaleString('en-ZW', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
 function fmtShort(n: number) {
@@ -16,7 +16,7 @@ function fmtShort(n: number) {
 
 function monthLabel(iso: string) {
   const [y, m] = iso.split('-')
-  return new Date(Number(y), Number(m) - 1).toLocaleDateString('en-ZA', {
+  return new Date(Number(y), Number(m) - 1).toLocaleDateString('en-ZW', {
     month: 'short', year: '2-digit',
   })
 }
@@ -222,7 +222,7 @@ export function FinancialPage() {
       cum += base
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
       rows.push({
-        month: d.toLocaleDateString('en-ZA', { month: 'short', year: '2-digit' }),
+        month: d.toLocaleDateString('en-ZW', { month: 'short', year: '2-digit' }),
         revenue: base,
         cumulative: cum,
       })
@@ -290,19 +290,19 @@ export function FinancialPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
               label="Total Invoiced"
-              value={`R ${fmtShort(summary?.totalInvoiced ?? 0)}`}
+              value={`$ ${fmtShort(summary?.totalInvoiced ?? 0)}`}
               sub={`${summary?.invoiceCount ?? 0} invoices`}
               color="blue"
             />
             <KpiCard
               label="Total Collected"
-              value={`R ${fmtShort(summary?.totalCollected ?? 0)}`}
+              value={`$ ${fmtShort(summary?.totalCollected ?? 0)}`}
               sub={`${summary?.paidCount ?? 0} paid`}
               color="green"
             />
             <KpiCard
               label="Outstanding"
-              value={`R ${fmtShort(summary?.totalOutstanding ?? 0)}`}
+              value={`$ ${fmtShort(summary?.totalOutstanding ?? 0)}`}
               sub={`${summary?.outstandingCount ?? 0} unpaid`}
               color="amber"
             />
@@ -387,7 +387,7 @@ export function FinancialPage() {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600 dark:text-gray-400">{label}</span>
                     <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-                      R {fmt(value)}
+                      $ {fmt(value)}
                     </span>
                   </div>
                   <MiniBar
@@ -455,13 +455,13 @@ export function FinancialPage() {
                         )}
                       </td>
                       <td className="px-4 py-2.5 tabular-nums text-gray-700 dark:text-gray-300">
-                        {inv > 0 ? `R ${fmt(inv)}` : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                        {inv > 0 ? `$ ${fmt(inv)}` : <span className="text-gray-300 dark:text-gray-600">—</span>}
                       </td>
                       <td className="px-4 py-2.5 tabular-nums text-green-700 dark:text-green-400 font-medium">
-                        {col > 0 ? `R ${fmt(col)}` : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                        {col > 0 ? `$ ${fmt(col)}` : <span className="text-gray-300 dark:text-gray-600">—</span>}
                       </td>
                       <td className="px-4 py-2.5 tabular-nums text-amber-700 dark:text-amber-400">
-                        {outs > 0 ? `R ${fmt(outs)}` : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                        {outs > 0 ? `$ ${fmt(outs)}` : <span className="text-gray-300 dark:text-gray-600">—</span>}
                       </td>
                       <td className="px-4 py-2.5 tabular-nums text-gray-500">
                         {rate != null ? (
@@ -499,7 +499,7 @@ export function FinancialPage() {
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Based on avg monthly collection of{' '}
-                  <strong>R {fmtShort(avg6MonthCollected)}</strong> (last 6 months)
+                  <strong>$ {fmtShort(avg6MonthCollected)}</strong> (last 6 months)
                 </p>
               </div>
 
@@ -528,14 +528,14 @@ export function FinancialPage() {
                 <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/40 p-3">
                   <p className="text-xs text-gray-500 mb-0.5">Projected total</p>
                   <p className="text-lg font-bold text-indigo-700 dark:text-indigo-300 tabular-nums">
-                    R {fmtShort(totalProjectedRev)}
+                    $ {fmtShort(totalProjectedRev)}
                   </p>
                   <p className="text-xs text-gray-400">over {projectMonths} months</p>
                 </div>
                 <div className="rounded-lg bg-indigo-50 dark:bg-indigo-950/40 p-3">
                   <p className="text-xs text-gray-500 mb-0.5">Month {projectMonths} revenue</p>
                   <p className="text-lg font-bold text-indigo-700 dark:text-indigo-300 tabular-nums">
-                    R {fmtShort(projections.at(-1)?.revenue ?? 0)}
+                    $ {fmtShort(projections.at(-1)?.revenue ?? 0)}
                   </p>
                   <p className="text-xs text-gray-400">at {growthRate}% / month</p>
                 </div>
@@ -557,10 +557,10 @@ export function FinancialPage() {
                       <tr key={r.month}>
                         <td className="px-3 py-1.5 text-gray-600 dark:text-gray-400">{r.month}</td>
                         <td className="px-3 py-1.5 font-medium text-gray-900 dark:text-gray-100 tabular-nums">
-                          R {fmt(r.revenue)}
+                          $ {fmt(r.revenue)}
                         </td>
                         <td className="px-3 py-1.5 text-indigo-600 dark:text-indigo-400 tabular-nums">
-                          R {fmt(r.cumulative)}
+                          $ {fmt(r.cumulative)}
                         </td>
                       </tr>
                     ))}
@@ -598,7 +598,7 @@ export function FinancialPage() {
                 label="Monthly salary / staff member"
                 value={staffCost} min={8_000} max={80_000} step={1_000}
                 onChange={setStaffCost}
-                format={(v) => `R ${fmtShort(v)}`}
+                format={(v) => `$ ${fmtShort(v)}`}
               />
               <Slider
                 label="Patients seen / staff / month"
@@ -610,7 +610,7 @@ export function FinancialPage() {
                 label="Avg revenue per patient visit"
                 value={revenuePerPatient} min={100} max={5_000} step={50}
                 onChange={setRevenuePerPatient}
-                format={(v) => `R ${fmtShort(v)}`}
+                format={(v) => `$ ${fmtShort(v)}`}
               />
 
               <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-2">
@@ -620,19 +620,19 @@ export function FinancialPage() {
                 {[
                   {
                     label: 'Added revenue',
-                    value: `R ${fmt(addedMonthlyRev)}`,
+                    value: `$ ${fmt(addedMonthlyRev)}`,
                     color: 'text-green-600 dark:text-green-400',
                     bold: false,
                   },
                   {
                     label: 'Added salary cost',
-                    value: `− R ${fmt(monthlyStaffCost)}`,
+                    value: `− $ ${fmt(monthlyStaffCost)}`,
                     color: 'text-red-500 dark:text-red-400',
                     bold: false,
                   },
                   {
                     label: 'Net monthly',
-                    value: `R ${fmt(netMonthly)}`,
+                    value: `$ ${fmt(netMonthly)}`,
                     color: netMonthly >= 0
                       ? 'text-blue-600 dark:text-blue-400'
                       : 'text-red-600 dark:text-red-400',
@@ -652,13 +652,13 @@ export function FinancialPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Annual salary spend</span>
                   <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
-                    R {fmt(monthlyStaffCost * 12)}
+                    $ {fmt(monthlyStaffCost * 12)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Annual added revenue</span>
                   <span className="font-semibold text-green-600 dark:text-green-400 tabular-nums">
-                    R {fmt(addedMonthlyRev * 12)}
+                    $ {fmt(addedMonthlyRev * 12)}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm border-t border-gray-200 dark:border-gray-700 pt-2 mt-2">
@@ -670,7 +670,7 @@ export function FinancialPage() {
                         : 'text-red-500 dark:text-red-400'
                     }`}
                   >
-                    R {fmt(netMonthly * 12)}
+                    $ {fmt(netMonthly * 12)}
                   </span>
                 </div>
               </div>
@@ -679,7 +679,7 @@ export function FinancialPage() {
                 <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-3 py-2 text-xs text-green-800 dark:text-green-300">
                   At {patientsPerStaff} patients/staff/month, hiring {numStaff} staff member
                   {numStaff > 1 ? 's' : ''} generates a net{' '}
-                  <strong>R {fmt(netMonthly)}/month</strong> increase. Worth considering.
+                  <strong>$ {fmt(netMonthly)}/month</strong> increase. Worth considering.
                 </div>
               ) : (
                 <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-3 py-2 text-xs text-red-800 dark:text-red-300">

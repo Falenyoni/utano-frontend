@@ -14,6 +14,8 @@ export interface AppointmentSummary {
   notes: string | null
   createdAt: string
   visitId: string | null
+  patientGender: string | null
+  patientDateOfBirth: string | null
 }
 
 export interface AppointmentDetail extends AppointmentSummary {

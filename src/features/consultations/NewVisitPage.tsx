@@ -16,6 +16,8 @@ interface PrefillState {
   doctorName?: string
   appointmentId?: string
   visitDate?: string
+  patientGender?: string | null
+  patientDateOfBirth?: string | null
 }
 
 export function NewVisitPage() {
@@ -33,8 +35,8 @@ export function NewVisitPage() {
   const [patientSearch, setPatientSearch] = useState(prefill.patientName ?? '')
   const [patientId, setPatientId] = useState(prefill.patientId ?? '')
   const [patientName, setPatientName] = useState(prefill.patientName ?? '')
-  const [patientGender, setPatientGender] = useState<string | null>(null)
-  const [patientDateOfBirth, setPatientDateOfBirth] = useState<string | null>(null)
+  const [patientGender, setPatientGender] = useState<string | null>(prefill.patientGender ?? null)
+  const [patientDateOfBirth, setPatientDateOfBirth] = useState<string | null>(prefill.patientDateOfBirth ?? null)
   const [searchResults, setSearchResults] = useState<{ id: string; fullName: string; gender: string; dateOfBirth: string }[]>([])
   const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
