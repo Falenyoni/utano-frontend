@@ -5,11 +5,11 @@ const settingsNav = [
   { to: '/settings/users', label: 'Users', permission: 'settings.users.view' },
   { to: '/settings/roles', label: 'Roles & Permissions', permission: 'settings.roles' },
   { to: '/settings/staff', label: 'Staff & Doctors', permission: 'settings.staff.view' },
-  { to: '/settings/medical-aids', label: 'Medical Aid Schemes', permission: 'settings.practice' },
+  { to: '/settings/medical-aids', label: 'Medical Aid Schemes', permission: 'settings.medical_aids' },
   { to: '/settings/service-pricing', label: 'Service Pricing', permission: 'settings.billing_config.view' },
   { to: '/settings/practice', label: 'Practice', permission: 'settings.practice' },
-  { to: '/settings/branding', label: 'Branding', permission: 'settings.practice' },
-  { to: '/settings/subscription', label: 'Subscription', permission: 'settings.practice' },
+  { to: '/settings/branding', label: 'Branding', permission: 'settings.branding' },
+  { to: '/settings/subscription', label: 'Subscription', permission: 'settings.subscription' },
 ]
 
 export function SettingsLayout() {

@@ -47,7 +47,6 @@ const labelClass =
 
 export function SetupPage() {
   const navigate = useNavigate()
-  const [apiKey, setApiKey] = useState('')
   const [form, setForm] = useState<FormState>(EMPTY)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -62,7 +61,7 @@ export function SetupPage() {
     setError(null)
     setIsSubmitting(true)
     try {
-      const result = await createPractice(form, apiKey)
+      const result = await createPractice(form)
       setSuccess({ practiceId: result.practiceId, practiceName: result.practiceName })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
@@ -108,8 +107,8 @@ export function SetupPage() {
         className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm w-full max-w-lg p-8 space-y-6"
       >
         <div className="space-y-1">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Register New Practice</h1>
-          <p className="text-xs text-gray-400 dark:text-gray-500">Creates the practice and its first admin account.</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Start your free trial</h1>
+          <p className="text-xs text-gray-400 dark:text-gray-500">30 days of full Professional access, no card required. Creates your practice and admin account.</p>
         </div>
 
         {error && (
@@ -156,23 +155,6 @@ export function SetupPage() {
                 />
               </div>
             ))}
-          </div>
-        </section>
-
-        <section className="space-y-3 border-t border-gray-100 dark:border-gray-800 pt-5">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-            Authorization
-          </h2>
-          <div>
-            <label className={labelClass}>Admin API Key</label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Enter the setup API key"
-              className={inputClass}
-              required
-            />
           </div>
         </section>
 

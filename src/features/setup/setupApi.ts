@@ -18,20 +18,21 @@ export interface CreatePracticeResponse {
   adminEmail: string
 }
 
+// Public self-service signup - no API key needed. The API-key-gated /api/auth/setup still
+// exists for manual/internal use (call it directly via Swagger/curl), but this frontend flow is
+// the public one, so it hits the dedicated /api/auth/register endpoint instead.
 export async function createPractice(
   request: CreatePracticeRequest,
-  apiKey: string,
 ): Promise<CreatePracticeResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/auth/setup`, {
+  const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Api-Key': apiKey,
     },
     body: JSON.stringify(request),
   })
 
-  if (response.status === 401) throw new Error('Invalid API key.')
+  if (response.status === 429) throw new Error('Too many attempts. Please try again later.')
   if (!response.ok) {
     const text = await response.text().catch(() => '')
     throw new Error(text || 'Failed to create practice.')
