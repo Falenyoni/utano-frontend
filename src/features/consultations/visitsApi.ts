@@ -61,8 +61,6 @@ export interface OpenVisitRequest {
   department?: string | null
   specialty?: string | null
   appointmentId?: string
-  patientGender?: string
-  patientDateOfBirth?: string
 }
 
 export interface TriageVisitRequest {

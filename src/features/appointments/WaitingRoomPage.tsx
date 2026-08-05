@@ -103,7 +103,7 @@ export function WaitingRoomPage() {
                 <div>
                   {appt.status === 'CheckedIn' && canOpenVisit && (
                     <button
-                      onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate, patientGender: appt.patientGender, patientDateOfBirth: appt.patientDateOfBirth } })}
+                      onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
                       className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 font-medium"
                     >
                       Open Visit
@@ -178,8 +178,6 @@ export function WaitingRoomPage() {
                             doctorName: appt.doctorName,
                             appointmentId: appt.id,
                             visitDate: appt.appointmentDate,
-                            patientGender: appt.patientGender,
-                            patientDateOfBirth: appt.patientDateOfBirth,
                           }
                         })}
                         className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 font-medium"

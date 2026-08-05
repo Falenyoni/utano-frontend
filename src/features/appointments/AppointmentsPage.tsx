@@ -286,7 +286,7 @@ export function AppointmentsPage() {
                             </button>
                           )}
                           {appt.status === 'CheckedIn' && canOpenVisit && (
-                            <button onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate, patientGender: appt.patientGender, patientDateOfBirth: appt.patientDateOfBirth } })}
+                            <button onClick={() => navigate('/consultations/new', { state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate } })}
                               className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium">
                               Open Visit
                             </button>
@@ -369,7 +369,7 @@ export function AppointmentsPage() {
                               )}
                               {appt.status === 'CheckedIn' && canOpenVisit && (
                                 <button onClick={() => navigate('/consultations/new', {
-                                  state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate, patientGender: appt.patientGender, patientDateOfBirth: appt.patientDateOfBirth }
+                                  state: { patientId: appt.patientId, patientName: appt.patientName, doctorId: appt.doctorId, doctorName: appt.doctorName, appointmentId: appt.id, visitDate: appt.appointmentDate }
                                 })} className="text-xs text-green-600 dark:text-green-400 hover:underline font-medium">
                                   Open Visit
                                 </button>
